@@ -1,0 +1,300 @@
+REM ***** BASIC *****
+
+
+Sub Main
+dim version as string
+version = "4.1"
+print "Bienvenue dans la version " & version &", le tableau de garde va être généré, cela peux prendre de quelques secondes à plusieurs minutes en fonction du nombre de services et de médecins. Un message apparaitra pour vous avertir une fois le tableau de garde généré, so sit back and enjoy!"
+dim newdowcount as integer
+dim repos as integer
+dim toubibs as object
+dim datedebut as string
+dim datefin as string
+dim diff as integer
+dim curg as integer
+dim curgarde as integer
+dim ocon as object
+dim nservice as integer
+dim statement as object
+ocon = connect
+statement = ocon.createstatement()
+dim dateundefined as boolean
+dateundefined = true
+getdates(statement,datedebut,datefin,dateundefined,repos)
+if dateundefined then
+   print "veuillez définir une date de début et une date de fin de la période"
+   goto bad_end
+end if
+setup(oCon)
+
+dim statement2 as object
+
+dim feries as object
+statement2 = ocon.createstatement()
+
+dim nmed as integer
+dim curdat as string
+curdat = datedebut
+dim tempdat as string
+dim services as object
+dim prevurg as integer
+dim prevint as integer
+prevurg = 666
+prevint = 666
+curg = 666
+dim nbinterieur as integer
+nbinterieur = nbservicesinterieur(statement)
+while curdat <= datefin
+   dim medundefined as boolean
+   dim interieurundefined as boolean
+   interieurundefined = True 'deviens faux une fois qu'un interne d'intérieur a été défini
+   medundefined = True 'cette variable deviens fausse une fois qu'un medecin différent du dernier est selectionné
+   dim dowtoinc as string
+   dowtoinc = getdow(curdat)
+   selecttoubib(curdat,nmed,dowtoinc,newdowcount,curgarde,ocon,medundefined,repos,prevurg,prevint,False,curg)
+   dorecord(curdat,nmed,dowtoinc,newdowcount,curgarde,statement,False)
+   selecttoubib(curdat,nmed,dowtoinc,newdowcount,curgarde,ocon,interieurundefined,repos,prevurg,prevint,True,curg)
+   dorecord(curdat,nmed,dowtoinc,newdowcount,curgarde,statement,True)
+   prevurg = curg
+   if medundefined or intundefined then
+      dim trololol as object
+      trololol = statement.executequery("SELECT REPOS FROM SETUP")
+      while trololol.next
+         repos = trololol.getint(1)
+      wend
+      print "le tableau de garde ne peut être généré en accord avec un minimum de " & repos & " jours de repos"
+      goto bad_end
+   end if 
+   curdat = incdate(curdat)
+wend
+print "generation terminee, ce tableau de garde vous est offert par ForgottenBeast et FouteFoute"
+bad_end:
+End Sub
+
+
+function connect
+Dim DatabaseContext As Object
+Dim DataSource As Object
+DatabaseContext = createUnoService("com.sun.star.sdb.DatabaseContext")
+DataSource = DatabaseContext.getByName("planning_garde")
+connect = Datasource.getConnection("","")
+end function
+
+sub getdates(statement,datedebut,datefin,dateundefined,repos)
+dim dates as object
+dates = Statement.executeQuery("SELECT DATEDEBUT, DATEFIN, REPOS FROM SETUP")
+while dates.next
+   datedebut = dates.getString(1)
+   datefin = dates.getString(2)
+   repos = dates.getint(3)
+   dateundefined = false
+wend
+end sub
+
+Sub setup(oCon)
+dim repos as integer
+dim datedebut as string
+dim dateundefined as boolean
+dim datefin as string
+ocon = connect
+statement = ocon.createstatement()
+getdates(statement,datedebut,datefin,dateundefined,repos)
+statement2 = ocon.createstatement()
+dim tablesetup as object
+tablesetup = statement.executequery("DROP TABLE GARDES")'reset table gardes
+if nbservicesinterieur(statement) > 0 then
+   tablesetup = statement.executequery("CREATE TABLE GARDES(JOUR VARCHAR(20) DEFAULT '1970-01-01', URGENCES INTEGER, INTERIEUR INTEGER)")
+else
+   tablesetup = statement.executequery("CREATE TABLE GARDES(JOUR VARCHAR(20), URGENCES INTEGER")
+end if
+dim nservice as string
+dim addrecord as object
+tablesetup = statement2.executequery("SELECT NUMERO FROM MEDECINS WHERE DERNIEREGARDE > " & datedebut)
+while tablesetup.next
+   addrecord = statement.executequery("UPDATE MEDECINS SET DERNIEREGARDE='1991-01-15' WHERE NUMERO = " & tablesetup.getint(1))
+wend
+addrecord = statement.executequery("DELETE FROM GARDES")
+addrecord = statement.executequery("UPDATE MEDECINS set NBGARDES= 0,NBFERIES = 0, NBLUNDI=0, NBMARDI = 0, NBMERCREDI = 0, NBJEUDI = 0, NBVENDREDI = 0, NBSAMEDI = 0, NBDIMANCHE = 0")
+End Sub
+
+function getdow(curdat)
+if weekday(curdat) = 1 then
+   getdow="NBDIMANCHE"
+elseif weekday(curdat) = 2 then
+   getdow="NBLUNDI"
+elseif weekday(curdat)= 3 then
+   getdow="NBMARDI"
+elseif weekday(curdat)=4 then
+   getdow="NBMERCREDI"
+elseif weekday(curdat)=5 then
+   getdow="NBJEUDI"
+elseif weekday(curdat)=6 then
+   getdow="NBVENDREDI"
+elseif weekday(curdat)=7 then
+   getdow="NBSAMEDI"
+end if
+end function
+
+sub selecttoubib(curdat,nmed,dowtoinc,newdowcount,curgarde,con,medundefined,repos,prevurg,prevint,interieur,curg)
+dim statement as object
+dim statement2 as object
+dim statement3 as object
+dim paspossible as object
+dim statement4 as object
+statement4 = con.createstatement()
+statement3 = con.createstatement()
+statement = con.createstatement()
+statement2 = con.createstatement()
+dim toubibs as object
+if dateferiee(curdat,con) then
+   if not interieur then
+      toubibs = statement.executequery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES,M." & dowtoinc & ",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '" & curdat & "' and JF.INTERIEUR = FALSE")
+   else
+      toubibs = statement.executequery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES,M." & dowtoinc & ",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '" & curdat & "' and JF.INTERIEUR = TRUE")
+   end if 
+   while toubibs.next
+      nmed = toubibs.getint(1)
+      curgarde = toubibs.getint(3)+1
+      newdowcount = toubibs.getint(4)+1
+      medundefined = false
+      if not interieur then
+         curg = toubibs.getint(5)
+      end if
+      goto endselecttoubib
+   wend
+end if
+if not interieur then
+   toubibs = statement.executequery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, " & dowtoinc &", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS ORDER BY NBGARDES ASC, " & dowtoinc & " ASC,DERNIEREGARDE ASC")
+else
+   toubibs = statement.executequery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES, M." & dowtoinc &", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE S.INTERIEUR = TRUE ORDER BY NBGARDES ASC, " & dowtoinc & " ASC,DERNIEREGARDE ASC")
+end if
+while toubibs.next 
+   paspossible = statement4.executequery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = " & toubibs.getint(1))
+   while paspossible.next
+      if curdat >= paspossible.getstring(1) and curdat <= paspossible.getstring(2) then
+         goto nexttoubib
+      end if
+   wend
+   feries = statement2.executequery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = " & toubibs.getint(1))
+   dim gtg as boolean 'cette variable determine si un medecin avec plusieurs jours feries requis a une garde compatible avec ceux ci
+   gtg = True
+   while feries.next
+      gtg = (datediff("d",curdat,feries.getstring(1)) > repos or datediff("d",curdat,feries.getstring(1)) < 0) and gtg
+      gtg = gtg and datediff("d",toubibs.getstring(2),curdat) > repos
+   wend
+   if toubibs.getint(5) = 0 then 'grade zero quand on génère pour un seul service
+      gtg = gtg and datediff("d",toubibs.getstring(2),curdat) > repos
+   elseif toubibs.getint(5) = 1 or toubibs.getint(5) = 2 then'premier ou deuxieme semestre, selection par défaut
+      gtg = gtg and datediff("d",toubibs.getstring(2),curdat) > repos 
+      gtg = gtg and toubibs.getint(11) <> prevurg 
+      gtg = gtg and toubibs.getint(11) <> prevint
+      if interieur then
+         gtg = gtg and toubibs.getint(11) <> curg
+      end if
+   elseif toubibs.getint(5) = 3 or toubibs.getint(5) = 4 then
+      gtg = gtg and toubibs.getint(3) < 5 and datediff("d",toubibs.getstring(2),curdat) > repos and toubibs.getint(11) <> prevurg and toubibs.getint(11) <> prevint 'on check le nombre total de gardes, pour ce grade là max 5
+      if dowtoinc = "NBJEUDI" then
+         gtg = gtg and toubibs.getint(7) = 0 and toubibs.getint(4) = 0
+      elseif dowtoinc = "NBVENDREDI" then
+         gtg = gtg and toubibs.getint(6) = 0 and toubibs.getint(4) = 0
+      elseif dowtoinc = "NBDIMANCHE" then
+         gtg = gtg and toubibs.getint(10) = 0
+      elseif dateferiee(curdat,con) and dowtoinc <> "NBDIMANCHE" then
+         gtg = gtg and toubibs.getint(9) = 0
+      end if
+      if interieur then
+         gtg = gtg and toubibs.getint(11) <> curg
+      end if
+   elseif toubibs.getint(5) >= 5 then
+      gtg = gtg and toubibs.getint(3) < 3 and datediff("d",toubibs.getstring(2),curdat) > repos and toubibs.getint(11) <> prevurg and toubibs.getint(11)<>prevint
+      gtg = gtg and not dateferiee(curdat,con)
+      if dowtoinc = "NBVENDREDI" or dowtoinc = "NBSAMEDI" or dowtoinc = "NBDIMANCHE" then
+         goto nexttoubib
+      end if
+      if interieur then
+         gtg = gtg and toubibs.getint(11) <> curg
+      end if
+   endif
+   recording:
+   if gtg then
+      nmed =toubibs.getint(1)
+      curgarde = toubibs.getint(3) + 1
+      newdowcount = toubibs.getint(4)+1
+      medundefined = False
+      if not interieur then
+         curg = toubibs.getint(11)
+      else
+         prevint = toubibs.getint(11)
+      end if
+      goto endselecttoubib
+   end if
+   nexttoubib:
+wend
+medundefined = true
+endselecttoubib:
+end sub
+
+sub dorecord(curdat,nmed,dowtoinc,newdowcount,curgarde,statement,interieur)
+dim addrecord as object
+addrecord = statement.executequery("UPDATE MEDECINS set DERNIEREGARDE = '" & curdat & "' WHERE NUMERO = " & nmed)
+addrecord = statement.executequery("update MEDECINS set " & dowtoinc & " = " & newdowcount & "where NUMERO = " & nmed)
+addrecord = statement.executequery("UPDATE MEDECINS set NBGARDES = " & curgarde & "WHERE NUMERO = " & nmed)
+if interieur then
+   addrecord = statement.executequery("UPDATE GARDES SET INTERIEUR = " & nmed & " WHERE JOUR = '" & curdat & "'")
+else
+   addrecord = statement.executequery("INSERT INTO GARDES(JOUR,URGENCES) VALUES('" & curdat & "'," & nmed & ")")
+end if
+end sub
+
+function dateferiee(curdat,con)
+dim statement as object
+statement = con.createstatement()
+dim feries as object
+feries = statement.executequery("SELECT NUMERO,INTERIEUR FROM JOURS_FERIES WHERE JOUR = '" & curdat & "'")
+while feries.next
+   dateferiee = True
+   goto done
+wend
+dateferiee= False
+done:
+end function
+
+function incdate(ladate)
+dim curdat as string
+dim tempdat
+curdat = dateadd("y",1,ladate)
+tempdat = year(curdat) & "-"
+if month(curdat) < 10 then
+   tempdat = tempdat & "0" & month(curdat) & "-"
+else
+   tempdat = tempdat & month(curdat) & "-"
+end if
+
+if day(curdat) < 10 then
+   tempdat = tempdat & "0" & day(curdat)
+else
+   tempdat = tempdat & day(curdat)
+end if
+incdate = tempdat
+end function
+
+function nbservicesinterieur(statement)
+dim liste as object
+liste = statement.executequery( "SELECT COUNT(NUMERO) FROM SERVICES WHERE INTERIEUR = TRUE")
+while liste.next
+   nbservicesinterieur = liste.getint(1)
+wend
+end function
+
+function caninterieur(nmed,statement)
+dim nservice as integer
+dim service as object
+service = statement.executequery("SELECT SERVICE FROM MEDECINS WHERE NUMERO = " & nmed)
+while service.next
+   nservice = service.getint(1)
+wend
+service = statement.executequery("SELECT INTERIEUR FROM SERVICES WHERE NUMERO = " & nservice)
+while service.next
+   caninterieur = service.getboolean(1)
+wend
+end function
