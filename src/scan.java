@@ -1,4 +1,9 @@
-import java.util.Scanner;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+
+
 
 
 public class scan {
@@ -7,11 +12,12 @@ public class scan {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		Scanner sc = new Scanner(System.in);
-		System.out.println("Veuillez saisir un mot :");
-		String str = sc.nextLine();
-		System.out.println("Vous avez saisi : " + str);
+		 try {
+			Connection c = DriverManager.getConnection("jdbc:hsqldb:mem:gardedb", "SA", "");
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
