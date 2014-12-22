@@ -64,4 +64,12 @@ public class scan {
 		 }
 	}
 
-}
+
+
+ public static void filltables(Connection c, Workbook data) throws SQLException {
+	 Statement mystatement = c.createStatement();
+	 ResultSet rs;
+	 Sheet sheet = data.getSheet(4);
+	 Cell cur;
+	
+ }
