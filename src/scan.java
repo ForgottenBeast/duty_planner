@@ -68,15 +68,35 @@ public class scan {
 
  public static void filltables(Connection c, Workbook data) throws SQLException {
 	 Statement mystatement = c.createStatement();
+	 Statement ms2 = c.createStatement();
 	 ResultSet rs;
+	 ResultSet rs2;
 	 Sheet sheet = data.getSheet(4);
-	 Cell serv;
-	 Cell inte;
-	 cell rep;
 	for (int i = 1; i < sheet.getRows();i++){
-		if sheet.getCell(i,3).getCellFormat() != null{
-			
+		if(sheet.getCell(i,3).getCellFormat() != null){
+			rs = mystatement.executeQuery("INSERT INTO SERVICES(NOM, INTERIEUR) VALUES(".concat(sheet.getCell(i,3).getContents()).concat(",TRUE)"));
+		}
+		else{
+			rs = mystatement.executeQuery("INSERT INTO SERVICES(NOM, INTERIEUR) VALUES(".concat(sheet.getCell(i,3).getContents()).concat(",FALSE)"));
 		}
 	}
+	
+	sheet = data.getSheet(0);
+	int nservice;
+	for (int i = 1; i < sheet.getRows();i++) {
+		rs2 = ms2.executeQuery("SELECT NUMERO FROM SERVICES WHERE NOM = '".concat(sheet.getCell(2,i).getContents()).concat("'"));
+		nservice = rs2.getInt("NUMERO");
+		rs = mystatement.executeQuery("INSERT INTO MEDECINS(NOM,NBSEMESTRES,SERVICE) VALUES(".concat(sheet.getCell(0,i).getContents()).concat(",").concat(sheet.getCell(1,i).getContents()).concat(Integer.toString(nservice)).concat(")"));
 	}
+	
+	sheet = data.getSheet(2);
+	for (int i = 1; i < sheet.getRows();i++){
+		rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '".concat(sheet.getCell(2,i).getContents()).concat("'"));
+		int nmedecin = rs2.getInt("NUMERO");
+		rs = mystatement.executeQuery("INSERT INTO IMPOSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES(".concat(sheet.getCell(0,i).getContents()).concat(",").concat(sheet.getCell(1,i).getContents().concat(Integer.toString(nmedecin)).concat(")")));
+	}
+	
+	sheet = data.getSheet(1);
+	
  }
+ 
