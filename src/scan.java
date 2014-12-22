@@ -70,6 +70,13 @@ public class scan {
 	 Statement mystatement = c.createStatement();
 	 ResultSet rs;
 	 Sheet sheet = data.getSheet(4);
-	 Cell cur;
-	
+	 Cell serv;
+	 Cell inte;
+	 cell rep;
+	for (int i = 1; i < sheet.getRows();i++){
+		if sheet.getCell(i,3).getCellFormat() != null{
+			
+		}
+	}
+	}
  }
