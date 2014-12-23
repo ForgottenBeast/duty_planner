@@ -82,10 +82,10 @@ public class scan {
 		 rs = mystatement.executeUpdate("CREATE TABLE IMPOSSIBILITES(DATEDEBUT varchar(20), DATEFIN varchar(20), NUMERO INTEGER, FOREIGN KEY (NUMERO) REFERENCES MEDECINS (NUMERO))");
 		 rs = mystatement.executeUpdate("CREATE TABLE JOURS_FERIES(JOUR varchar(20), NUMERO INTEGER, INTERIEUR BOOLEAN, FOREIGN KEY (NUMERO) REFERENCES MEDECINS(NUMERO),CONSTRAINT ENTRY_DD primary key (JOUR, INTERIEUR))");
 		 if (!hasint){
-			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR VARCHAR(20) primary key,URGENCES INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO))");
+			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR Date primary key,URGENCES INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO))");
 		 }
 		 else {
-			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR VARCHAR(20) PRIMARY KEY,URGENCES INTEGER,INTERIEUR INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO), FOREIGN KEY (interieur) REFERENCES MEDECINS(NUMERO))");
+			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR Date PRIMARY KEY,URGENCES INTEGER,INTERIEUR INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO), FOREIGN KEY (interieur) REFERENCES MEDECINS(NUMERO))");
 		 }
 		 return hasint;
 	}
@@ -168,7 +168,7 @@ while(rs2.next()){
 	 datefin = formatter.parse(msheet.getCell(1,1).getContents());
 	 curdat = datedebut;
 	  outloop:
-	 while(curdat.before(datefin)){
+	 while(!curdat.after(datefin)){
 		 System.out.println("iterating at".concat(formatter.format(curdat)));
 		 medundefined = true;
 		 interieurundefined = true;
@@ -245,10 +245,10 @@ while(rs2.next()){
 			 
 			 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 			 while(rs2.next()){
-				 System.out.println("c'est dans les vacances de ".concat(Integer.toString(rs.getInt("NUMERO"))));
 				 if(curdat.after(fmt.parse(rs2.getString("DATEDEBUT"))) && curdat.before(fmt.parse(rs2.getString("DATEFIN")))){
-					 System.out.println("il peut pas");
 					 gtg = false;
+					 System.out.println("c'est dans les vacances de ".concat(Integer.toString(rs.getInt("NUMERO"))));
+					 
 					 break;
 				 }
 			 }
@@ -258,9 +258,9 @@ while(rs2.next()){
 					 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 					 int nbdays = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs.getString("DERNIEREGARDE")))).getDays();
 					 while(rs3.next()){
-						 int nbdaysf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR")))).getDays();
-				
-						 gtg = gtg && (nbdaysf > repos) && (nbdays > repos);
+						 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR")))).getDays();
+						 int daysaf= Days.daysBetween(new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR"))), new org.joda.time.DateTime(curdat)).getDays();
+						 gtg = gtg && ((daysaf > repos)||(daysbf > repos)) && ((nbdays > repos)||(nbdays < 0));
 						 if(!gtg){
 							 System.out.println("not gtg : number of days jours feries");
 						 }
@@ -343,7 +343,6 @@ while(rs2.next()){
 						 res.medundefined = false;
 						 res.dowtoinc = dowtoinc;
 						 res.jour = fmt.format(curdat);
-						 System.out.println("the res jour is ".concat(res.jour));
 						 if(interieur){
 							 res.curint = rs.getInt("SERVICE");
 						 }
@@ -382,9 +381,11 @@ while(rs2.next()){
  }
 
  
-public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDateFormat fmt) throws SQLException{
+public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDateFormat fmt) throws SQLException, ParseException{
 	 Statement ms = c.createStatement();
-	 System.out.println("now trying to record the date ".concat(garde.jour));
+	 Calendar cal = Calendar.getInstance();
+	 cal.setTime(fmt.parse(garde.jour));
+	 java.sql.Date sqldate = new java.sql.Date(cal.getTime().getTime());
 	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '".concat(garde.jour).concat("' WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 rs = ms.executeUpdate("update MEDECINS set ".concat(garde.dowtoinc).concat(" = ").concat(Integer.toString(garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
@@ -392,7 +393,7 @@ public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDa
 		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(garde.nmed)).concat(" WHERE JOUR = '").concat(garde.jour).concat("'"));
 	 }
 	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('".concat(garde.jour).concat("',").concat(Integer.toString(garde.nmed)).concat(")"));
+		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(garde.nmed)).concat(")"));
 	 }
  }
 
@@ -400,7 +401,7 @@ public static void writeoutput(Connection c, WritableWorkbook output,boolean has
 	WritableSheet ms = output.createSheet("planning", 0);
 	Statement mst = c.createStatement();
 	Statement ms2 = c.createStatement();
-	ResultSet rs = mst.executeQuery("SELECT * FROM GARDES");
+	ResultSet rs = mst.executeQuery("SELECT * FROM GARDES ORDER BY JOUR ASC");
 	ResultSet rs2;
 	int i = 1;
 	String st = null;
