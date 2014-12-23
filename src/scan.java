@@ -9,8 +9,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date; 
-import java.util.Formatter;
+import org.joda.time.*;
 
+import java.util.Formatter;
 import jxl.*; 
 import jxl.read.biff.BiffException;
 import jxl.write.Number;
@@ -132,7 +133,10 @@ while(rs2.next()){
  public static void genplanning(Connection c, WritableWorkbook output, Workbook data) throws ParseException{
 	 int prevurg,prevint,curg,nbinterieur;
 	 boolean medundefined,interieurundefined;
-	 
+	 int newdowcount;
+	 Sheet mst = data.getSheet(3);
+	 int repos = Integer.parseInt(mst.getCell(2,1).getContents());
+	 Calendar cal = Calendar.getInstance();
 	 prevurg = 666;
 	 curg = 666;
 	 prevint = 666;
@@ -142,19 +146,133 @@ while(rs2.next()){
 	 datedebut = formatter.parse(msheet.getCell(0,1).getContents());
 	 datefin = formatter.parse(msheet.getCell(1,1).getContents());
 	 curdat = datedebut;
-	 while(datedebut.after(datefin)){
+	 outloop:
+	 while(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(datefin)).getDays() >= 0){
 		 medundefined = true;
 		 interieurundefined = true;
 		 String dowtoinc = getdow(curdat);
+		selecttoubib(repos,curg,prevurg,prevint,medundefined,newdowcount,nmed,curgarde,c,curdat,false,dowtoinc,fmt);
+		if(medundefined){
+			break outloop;
+		}
+		dorecord(c,curdat,dowtoinc,newdowcount,curgarde,false,nmed,fmt);
+		selecttoubib(repos,curg,prevurg,prevint,interieurundefined,newdowcount,nmed,curgarde,c,curdat,true,dowtoinc,fmt);
+		if(interieurundefined){
+			break outloop;
+		}
+		dorecord(c,curdat,dowtoinc,newdowcount,curgarde,true,nmed,fmt);
+		prevurg = curg;
+		cal.setTime(curdat);
+		cal.add(Calendar.DATE, 1);
+		curdat = formatter.parse(cal.getTime());
 	 }
 	 
  }
  
- public static boolean dateferiee(Date curdat, Connection c){
+ public static boolean dateferiee(Date curdat, Connection c,SimpleDateFormat fmt) throws SQLException{
 	 Statement ms = c.createStatement();
-	 ResultSet rs = ms.executeQuery("SELECT NUMERO, INTERIEUR FROM JOURS_FERIES WHERE JOUR='".concat(str))
+	 ResultSet rs = ms.executeQuery("SELECT NUMERO, INTERIEUR FROM JOURS_FERIES WHERE JOUR='".concat(fmt.format(curdat)));
+	 while(rs.next()){
+		 return true;
+	 }
+	 return false;
  }
- 
+
+ public static void selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int nmed,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
+	 Statement ms2 = c.createStatement();
+	 Statement ms3 = c.createStatement();
+	 Statement ms = c.createStatement();
+	 ResultSet rs,rs2,rs3;
+	 if(dateferiee(curdat,c,fmt)){
+		 if(!interieur){
+			 rs = ms.executeQuery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
+		 }
+		 else{
+			 rs=ms.executeQuery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
+		 }
+		 while(rs.next()){
+			 nmed = rs.getInt("M.NUMERO");
+			 curgarde = rs.getInt("M.NBGARDES")+1;
+			 newdowcount = rs.getInt(dowtoinc)+1;
+			 medundefined = false;
+			 if(!interieur){
+				 curg = rs.getInt("SERVICE");
+			 }
+		 }
+	 }
+	 else{
+		 if(!interieur){
+			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+		 }
+		 else{
+			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE S.INTERIEUR = TRUE ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+		 }
+		 loops:
+		 while(rs.next()){
+			 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+			 while(rs2.next()){
+				 if(curdat.after(fmt.parse(rs2.getString("DATEDEBUT"))) && curdat.before(fmt.parse(rs2.getString("DATEFIN")))){
+					 continue;
+				 }
+				 else{
+					 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+					 boolean gtg = true;
+					 int nbdays = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs.getString("DERNIEREGARDE")))).getDays();
+					 
+					 while(rs3.next()){
+						 int nbdaysf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR")))).getDays();
+				
+						 gtg = gtg && (nbdaysf > repos) && (nbdays > repos);
+						 
+					 }
+					 gtg = gtg && (nbdays > repos);
+					 if (rs.getInt("NBSEMESTRES") == 0){
+						
+						
+						if(interieur){
+							gtg = gtg && (rs.getInt("SERVICE")!=curg);
+						}
+					 }
+					 else if(rs.getInt("NBSEMESTRES")== 3 ||rs.getInt("NBSEMESTRES")== 4 ){
+						 gtg = gtg && (rs.getInt("NBGARDES") < 5) && (nbdays > repos);
+						 if(dowtoinc == "NBJEUDI"){
+							 gtg = gtg && (rs.getInt(dowtoinc) == 0);
+						 }
+						 else if(dowtoinc == "NBVENDREDI"){
+							 gtg = gtg && (rs.getInt(dowtoinc)==0);
+						 }
+						 else if (dowtoinc == "NBDIMANCHE"){
+							 gtg = gtg && (rs.getInt(dowtoinc) == 0);
+						 }
+						 else if(dateferiee(curdat,c,fmt)&&dowtoinc!="NBDIMANCHE"){
+							 gtg = gtg && (rs.getInt("NBDIMANCHE") == 0);
+						 }
+						 if(interieur){
+							 gtg = gtg && rs.getInt("SERVICE") != curg;
+						 }
+					 }
+					 else if(rs.getInt("NBSEMESTRES") >= 5){
+						 gtg = gtg && rs.getInt("NBGARDES") < 3 && !dateferiee(curdat,c,fmt);
+						 if((dowtoinc == "NBVENDREDI")||(dowtoinc == "NBSAMEDI")||(dowtoinc=="NBDIMANCHE")){
+							 continue;
+						 }
+						 if(interieur){
+							 gtg = gtg && rs.getInt("SERVICE") != curg;
+						 }
+					 }
+					 gtg = gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
+					 if(gtg){
+						 nmed = rs.getInt("NUMERO");
+						 curgarde = rs.getInt("NBGARDES")+1;
+						 newdowcount = rs.getInt(dowtoinc)+1;
+						 medundefined = false;
+					 }
+				 }
+			 }
+		 }
+	 }
+
+ }
  public static String getdow(Date curdat){
 	 Calendar cal = Calendar.getInstance();
 	 cal.setTime(curdat);
@@ -176,8 +294,19 @@ while(rs2.next()){
 		 return "NBSAMEDI";
 	 }
  }
- 
- public static void test(Connection c, WritableWorkbook output) throws SQLException, RowsExceededException, WriteException, IOException{
+ public static void dorecord(Connection c, Date curdat, String dowtoinc,int newdowcount,int curgarde,boolean interieur,int nmed, SimpleDateFormat fmt){
+	 Statement ms = c.createStatement();
+	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '".concat(fmt.format(curdat)).concat("' WHERE NUMERO = ").concat(Integer.toString(nmed)));
+	 rs = ms.executeUpdate("update MEDECINS set ".concat(dowtoinc).concat(" = ").concat(Integer.toString(newdowcount)).concat("where NUMERO = ").concat(Integer.toString(nmed)));
+	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(nmed)));
+	 if(interieur){
+		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(nmed)).concat(" WHERE JOUR = '").concat(fmt.format(curdat)).concat("'"));
+	 }
+	 else{
+		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('".concat(fmt.format(curdat)).concat("',").concat(Integer.toString(nmed)).concat(")"));
+	 }
+ }
+ public static void test(Connection c, WritableWorkbook output) throws SQLException, RowsExceede1dException, WriteException, IOException{
 	 Statement ms = c.createStatement();
 	 WritableSheet msheet = output.createSheet("services", 0);
 	 ResultSet rs = ms.executeQuery("SELECT * FROM SERVICES");
