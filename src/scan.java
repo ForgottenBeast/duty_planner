@@ -40,17 +40,17 @@ public class scan {
 		Workbook data;
 		
 			data = Workbook.getWorkbook(new File("data.xls"));
-		
+		boolean hasint = false;
 		 WritableWorkbook workbook = Workbook.createWorkbook(new File("planning_garde.xls"));
-		 setup(c,data);
+		 setup(c,data,hasint);
 		 filltables(c,data);
 		 genplanning(c,data);
+		 writeoutput(c,workbook,hasint);
 
 	}
 	
-	public static void  setup(Connection c, Workbook data) throws SQLException	{
+	public static void  setup(Connection c, Workbook data,boolean hasint) throws SQLException	{
 		Sheet sheet = data.getSheet(4);
-		 boolean hasint = false;
 		 Cell cur;
 		 for (int i = 1; i < sheet.getRows(); i++){
 			 cur = sheet.getCell(2,i);
@@ -298,7 +298,6 @@ while(rs2.next()){
  }
 
  
-
 public static void dorecord(Connection c, Date curdat, String dowtoinc,int newdowcount,int curgarde,boolean interieur,int nmed, SimpleDateFormat fmt) throws SQLException{
 	 Statement ms = c.createStatement();
 	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '".concat(fmt.format(curdat)).concat("' WHERE NUMERO = ").concat(Integer.toString(nmed)));
@@ -312,6 +311,36 @@ public static void dorecord(Connection c, Date curdat, String dowtoinc,int newdo
 	 }
  }
 
+public static void writeoutput(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+	WritableSheet ms = output.createSheet("planning", 0);
+	Statement mst = c.createStatement();
+	ResultSet rs = mst.executeQuery("SELECT * FROM GARDES");
+	int i = 1;
+	Label l1,l2,l3;
+	l1 = new Label(0,0,"Date");
+	l2 = new Label(1,0,"Urgences");
+	if(hasint){
+	l3 = new Label(2,0,"Interieur");
+	ms.addCell(l3);
+	}
+	ms.addCell(l1);
+	ms.addCell(l2);
+	
+	while(rs.next()){
+		l1 = new Label(0,i,rs.getString("JOUR"));
+		l2 = new Label(1,i,rs.getString("URGENCES"));
+		if(hasint){
+		l3 = new Label(2,i,rs.getString("INTERIEUR"));
+		ms.addCell(l3);
+		}
+		ms.addCell(l1);
+		ms.addCell(l2);
+		
+		i++;
+	}
+	output.write();
+	output.close();
+}
 public static void test(Connection c, WritableWorkbook output) throws SQLException, WriteException, IOException{
 	 Statement ms = c.createStatement();
 	 WritableSheet msheet = output.createSheet("services", 0);
