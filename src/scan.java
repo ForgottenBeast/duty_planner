@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.io.File; 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date; 
 import java.util.Formatter;
 
@@ -77,6 +78,7 @@ public class scan {
 	 Statement mystatement = c.createStatement();
 	 Statement ms2 = c.createStatement();
 	 int rs;
+	 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-mm-dd");
 	 boolean mbool;
 	 ResultSet rs2;
 	 Sheet sheet = data.getSheet(4);
@@ -106,7 +108,7 @@ public class scan {
 while(rs2.next()){
 	int nmedecin = rs2.getInt("NUMERO");
 	
-		rs = mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("','").concat(sheet.getCell(1,i).getContents()).concat("',").concat(Integer.toString(nmedecin)).concat(")"));
+		rs = mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES('".concat(formatter.format(formatter.parse(sheet.getCell(0,i).getContents()))).concat("','").concat(formatter.format(formatter.parse(sheet.getCell(1,i).getContents()))).concat("',").concat(Integer.toString(nmedecin)).concat(")"));
 }
 }
 	
@@ -117,10 +119,10 @@ while(rs2.next()){
 			mbool = sheet.getCell(2, i).getCellFormat() != null;
 		int nmedecin = rs2.getInt("NUMERO");
 		if(mbool){
-		rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO,INTERIEUR) VALUES ('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(Integer.toString(nmedecin).concat(",").concat("TRUE").concat(")")));
+		rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO,INTERIEUR) VALUES ('".concat(formatter.format(formatter.parse(sheet.getCell(0,i).getContents()))).concat("',").concat(Integer.toString(nmedecin).concat(",").concat("TRUE").concat(")")));
 		}
 		else{
-			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO,INTERIEUR) VALUES ('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(Integer.toString(nmedecin).concat(")").concat("FALSE")));
+			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO,INTERIEUR) VALUES ('".concat(formatter.format(formatter.parse(sheet.getCell(0,i).getContents()))).concat("',").concat(Integer.toString(nmedecin).concat(")").concat("FALSE")));
 
 		}
 		}
@@ -130,20 +132,49 @@ while(rs2.next()){
  public static void genplanning(Connection c, WritableWorkbook output, Workbook data) throws ParseException{
 	 int prevurg,prevint,curg,nbinterieur;
 	 boolean medundefined,interieurundefined;
+	 
 	 prevurg = 666;
 	 curg = 666;
 	 prevint = 666;
-	 SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
+	 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-mm-dd");
 	 Date datedebut,curdat,datefin;
 	 Sheet msheet = data.getSheet(3);
 	 datedebut = formatter.parse(msheet.getCell(0,1).getContents());
 	 datefin = formatter.parse(msheet.getCell(1,1).getContents());
 	 curdat = datedebut;
-	 while(curdat <= datefin){
+	 while(datedebut.after(datefin)){
 		 medundefined = true;
 		 interieurundefined = true;
+		 String dowtoinc = getdow(curdat);
 	 }
 	 
+ }
+ 
+ public static boolean dateferiee(Date curdat, Connection c){
+	 Statement ms = c.createStatement();
+	 ResultSet rs = ms.executeQuery("SELECT NUMERO, INTERIEUR FROM JOURS_FERIES WHERE JOUR='".concat(str))
+ }
+ 
+ public static String getdow(Date curdat){
+	 Calendar cal = Calendar.getInstance();
+	 cal.setTime(curdat);
+	 int dow = cal.get(Calendar.DAY_OF_WEEK);
+	 switch(dow){
+	 case 1:
+		 return "NBDIMANCHE";
+	 case 2:
+		 return "NBLUNDI";
+	 case 3:
+		 return "NBMARDI";
+	 case 4:
+		 return "NBMERCREDI";
+	 case 5:
+		 return "NBJEUDI";
+	 case 6:
+		 return "NBVENDREDI";
+	 case 7:
+		 return "NBSAMEDI";
+	 }
  }
  
  public static void test(Connection c, WritableWorkbook output) throws SQLException, RowsExceededException, WriteException, IOException{
