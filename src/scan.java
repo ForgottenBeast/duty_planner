@@ -256,7 +256,7 @@ while(rs2.next()){
 				 System.out.println("not gtg : vacances");
 			 }
 					 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
-					 int nbdays = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs.getString("DERNIEREGARDE")))).getDays();
+					 int nbdays = Days.daysBetween(new org.joda.time.DateTime(fmt.parse(rs.getString("DERNIEREGARDE"))), new org.joda.time.DateTime(curdat)).getDays();
 					 while(rs3.next()){
 						 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR")))).getDays();
 						 int daysaf= Days.daysBetween(new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR"))), new org.joda.time.DateTime(curdat)).getDays();
@@ -265,6 +265,7 @@ while(rs2.next()){
 							 System.out.println("not gtg : number of days jours feries");
 						 }
 					 }
+					 System.out.println(Integer.toString(nbdays));
 					 gtg = gtg && ((nbdays > repos)||(nbdays < 0));
 					 if(!gtg){
 					 System.out.println("not gtg : number of days repos = ".concat(Integer.toString(nbdays)));
