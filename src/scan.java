@@ -42,9 +42,15 @@ public class scan {
 			data = Workbook.getWorkbook(new File("data.xls"));
 		boolean hasint = false;
 		 WritableWorkbook workbook = Workbook.createWorkbook(new File("planning_garde.xls"));
+		 System.out.println("Setting up");
 		 setup(c,data,hasint);
+		 System.out.println("done setting up");
+		 System.out.println("filling tables");
 		 filltables(c,data);
+		 System.out.println("done");
+		 System.out.println("generation");
 		 genplanning(c,data);
+		 System.out.println("done");
 		 writeoutput(c,workbook,hasint);
 
 	}
@@ -149,20 +155,18 @@ while(rs2.next()){
 	 curdat = datedebut;
 	 outloop:
 	 while(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(datefin)).getDays() >= 0){
+		 System.out.println("iterating at".concat(formatter.format(curdat)));
 		 medundefined = true;
 		 interieurundefined = true;
 		 String dowtoinc = getdow(curdat);
-		selecttoubib(repos,curg,prevurg,prevint,medundefined,newdowcount,nmed,curgarde,c,curdat,false,dowtoinc,formatter);
-		if(medundefined){
-			break outloop;
-		}
-		dorecord(c,curdat,dowtoinc,newdowcount,curgarde,false,nmed,formatter);
-		selecttoubib(repos,curg,prevurg,prevint,interieurundefined,newdowcount,nmed,curgarde,c,curdat,true,dowtoinc,formatter);
-		if(interieurundefined){
-			break outloop;
-		}
-		dorecord(c,curdat,dowtoinc,newdowcount,curgarde,true,nmed,formatter);
-		prevurg = curg;
+		 dunit garde;
+		garde = selecttoubib(repos,curg,prevurg,prevint,medundefined,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
+		System.out.println("chose toubib number".concat(Integer.toString(garde.nmed)));
+		dorecord(c,garde,false,formatter);
+		garde = selecttoubib(repos,curg,prevurg,prevint,interieurundefined,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
+		dorecord(c,garde,true,formatter);
+		prevurg = garde.curg;
+		prevint = garde.curint;
 		cal.setTime(curdat);
 		cal.add(Calendar.DATE, 1);
 		curdat = cal.getTime();
@@ -178,11 +182,26 @@ while(rs2.next()){
 	 }
 	 return false;
  }
-
- public static void selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int nmed,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
+ public class dunit {
+	    public dunit(int i, String string, String string2, int j, int k, int l,
+			int m, boolean b) {
+		
+	}
+		int nmed;
+	    String jour;
+	    String dowtoinc;
+	    int curg;
+	    int curint;
+	    int curgarde;
+	    int newdowcount;
+	    boolean medundefined;
+	    // etc
+	}
+ public static dunit selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
 	 Statement ms2 = c.createStatement();
 	 Statement ms3 = c.createStatement();
 	 Statement ms = c.createStatement();
+	 dunit res = ;
 	 ResultSet rs,rs2,rs3;
 	 if(dateferiee(curdat,c,fmt)){
 		 if(!interieur){
@@ -192,12 +211,12 @@ while(rs2.next()){
 			 rs=ms.executeQuery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
 		 }
 		 while(rs.next()){
-			 nmed = rs.getInt("M.NUMERO");
-			 curgarde = rs.getInt("M.NBGARDES")+1;
-			 newdowcount = rs.getInt(dowtoinc)+1;
+			 res.nmed = rs.getInt("M.NUMERO");
+			 res.curgarde = rs.getInt("M.NBGARDES")+1;
+			 res.newdowcount = rs.getInt(dowtoinc)+1;
 			 medundefined = false;
 			 if(!interieur){
-				 curg = rs.getInt("SERVICE");
+				 res.curg = rs.getInt("SERVICE");
 			 }
 		 }
 	 }
@@ -263,16 +282,29 @@ while(rs2.next()){
 					 }
 					 gtg = gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
 					 if(gtg){
-						 nmed = rs.getInt("NUMERO");
-						 curgarde = rs.getInt("NBGARDES")+1;
-						 newdowcount = rs.getInt(dowtoinc)+1;
-						 medundefined = false;
+						 res.curgarde = rs.getInt("NBGARDES")+1;
+						 res.newdowcount = rs.getInt(dowtoinc)+1;
+						 res.medundefined = false;
+						 res.dowtoinc = dowtoinc;
+						 if(interieur){
+							 res.curint = rs.getInt("SERVICE");
+						 }
+						 else{
+							 res.curg = rs.getInt("SERVICE");
+						 }
+						 
+						res.nmed = rs.getInt("NUMERO");
+						 
 					 }
 				 }
 			 }
 		 }
+		
 	 }
-
+	 if(res.medundefined == true){
+		 System.out.println("medundefined!");
+	 }
+	 return res;
  }
  
  public static String getdow(Date curdat){
@@ -298,16 +330,16 @@ while(rs2.next()){
  }
 
  
-public static void dorecord(Connection c, Date curdat, String dowtoinc,int newdowcount,int curgarde,boolean interieur,int nmed, SimpleDateFormat fmt) throws SQLException{
+public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDateFormat fmt) throws SQLException{
 	 Statement ms = c.createStatement();
-	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '".concat(fmt.format(curdat)).concat("' WHERE NUMERO = ").concat(Integer.toString(nmed)));
-	 rs = ms.executeUpdate("update MEDECINS set ".concat(dowtoinc).concat(" = ").concat(Integer.toString(newdowcount)).concat("where NUMERO = ").concat(Integer.toString(nmed)));
-	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(nmed)));
+	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '".concat(fmt.format(garde.jour)).concat("' WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
+	 rs = ms.executeUpdate("update MEDECINS set ".concat(garde.dowtoinc).concat(" = ").concat(Integer.toString(garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(garde.nmed)));
+	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 if(interieur){
-		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(nmed)).concat(" WHERE JOUR = '").concat(fmt.format(curdat)).concat("'"));
+		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(garde.nmed)).concat(" WHERE JOUR = '").concat(fmt.format(garde.jour)).concat("'"));
 	 }
 	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('".concat(fmt.format(curdat)).concat("',").concat(Integer.toString(nmed)).concat(")"));
+		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('".concat(fmt.format(garde.jour)).concat("',").concat(Integer.toString(garde.nmed)).concat(")"));
 	 }
  }
 
@@ -328,9 +360,9 @@ public static void writeoutput(Connection c, WritableWorkbook output,boolean has
 	
 	while(rs.next()){
 		l1 = new Label(0,i,rs.getString("JOUR"));
-		l2 = new Label(1,i,rs.getString("URGENCES"));
+		l2 = new Label(1,i,Integer.toString(rs.getInt("URGENCES")));
 		if(hasint){
-		l3 = new Label(2,i,rs.getString("INTERIEUR"));
+		l3 = new Label(2,i,Integer.toString(rs.getInt("INTERIEUR")));
 		ms.addCell(l3);
 		}
 		ms.addCell(l1);
