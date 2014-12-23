@@ -175,10 +175,17 @@ while(rs2.next()){
 		 String dowtoinc = getdow(curdat);
 		 dunit garde = new dunit(666, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
 		garde = selecttoubib(repos,curg,prevurg,prevint,medundefined,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
-		System.out.println("chose toubib number".concat(Integer.toString(garde.nmed)).concat("for date ").concat(garde.jour));
+		if(garde.medundefined){
+			System.out.println("yarr, we are outta luck");
+			break outloop;
+		}
 		dorecord(c,garde,false,formatter);
 		if(hasint){
+			garde.medundefined = true;
 		garde = selecttoubib(repos,curg,prevurg,prevint,interieurundefined,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
+		if(garde.medundefined){
+			break outloop;
+		}
 		dorecord(c,garde,true,formatter);
 		prevint = garde.curint;
 		}
@@ -266,7 +273,7 @@ while(rs2.next()){
 						 }
 					 }
 					 System.out.println(Integer.toString(nbdays));
-					 gtg = gtg && ((nbdays > repos)||(nbdays < 0));
+					 gtg = gtg && ((nbdays >= repos)||(nbdays < 0));
 					 if(!gtg){
 					 System.out.println("not gtg : number of days repos = ".concat(Integer.toString(nbdays)));
 					 }
@@ -391,7 +398,7 @@ public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDa
 	 rs = ms.executeUpdate("update MEDECINS set ".concat(garde.dowtoinc).concat(" = ").concat(Integer.toString(garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 if(interieur){
-		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(garde.nmed)).concat(" WHERE JOUR = '").concat(garde.jour).concat("'"));
+		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
 	 }
 	 else{
 		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(garde.nmed)).concat(")"));
