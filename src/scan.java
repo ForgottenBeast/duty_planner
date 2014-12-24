@@ -69,7 +69,7 @@ public class scan {
 		boolean hasint = false;
 		 Cell cur;
 		 for (int i = 1; i < sheet.getRows(); i++){
-			 cur = sheet.getCell(2,i);
+			 cur = sheet.getCell(1,i);
 			 if (!hasint){
 				 hasint = cur.getCellFormat() != null;
 			 }
@@ -100,7 +100,7 @@ public class scan {
 	 ResultSet rs2;
 	 Sheet sheet = data.getSheet(4);
 	for (int i = 1; i < sheet.getRows();i++){
-		if(sheet.getCell(2,i).getCellFormat() != null){
+		if(sheet.getCell(1,i).getCellFormat() != null){
 			rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',TRUE)"));
 		}
 		else{
@@ -189,8 +189,9 @@ while(rs2.next()){
  
  public static boolean dateferiee(Date curdat, Connection c,SimpleDateFormat fmt) throws SQLException{
 	 Statement ms = c.createStatement();
-	 ResultSet rs = ms.executeQuery("SELECT NUMERO, INTERIEUR FROM JOURS_FERIES WHERE JOUR='".concat(fmt.format(curdat)).concat("'"));
+	 ResultSet rs = ms.executeQuery("SELECT * FROM JOURS_FERIES WHERE JOUR='".concat(fmt.format(curdat)).concat("'"));
 	 while(rs.next()){
+		 System.out.println("c ferie");
 		 return true;
 	 }
 	 return false;
@@ -225,7 +226,7 @@ while(rs2.next()){
 	 }
 	 else{
 		 System.out.println("doing else after férié");
-		 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
+		 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = TRUE"));
 	 
 	 while(rs.next()){
 		 int nbferie = 0;
@@ -369,8 +370,6 @@ while(rs2.next()){
 	 return itis;
  }
  
-
- 
  public static dunit selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
 	 Statement ms2 = c.createStatement();
 	 Statement ms = c.createStatement();
@@ -381,13 +380,14 @@ while(rs2.next()){
 		 if(isreserved(interieur,c,curdat,fmt)){
 		 res = selferie(c,curdat,res,dowtoinc,interieur,fmt);
 		 if(!res.medundefined){
+			 System.out.println("returning reserver "+res.nmed);
 			 return res;
 		 }
 		 }
 	 }
 		 System.out.println(fmt.format(curdat).concat(" n'est pas férié"));
 		 if(!interieur){
-			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" ORDER BY SERVICES.INTERIEUR ASC, NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 		 }
 		 else{
 			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
@@ -447,7 +447,6 @@ while(rs2.next()){
 	 }
  }
 
- 
 public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDateFormat fmt) throws SQLException, ParseException{
 	System.out.println("toubib "+garde.nmed+" nbgarde = "+garde.curgarde); 
 	Statement ms = c.createStatement();
@@ -473,6 +472,7 @@ public static void writeoutput(Connection c, WritableWorkbook output,boolean has
 	writegardes(c,output,hasint);
 	writestats(c,output,hasint);
 	writegps(c,output,hasint);
+	writecalendar(c,output,hasint);
 	output.write();	
 	output.close();
 }
@@ -549,6 +549,34 @@ public static void writestats(Connection c, WritableWorkbook output,boolean hasi
 		i++;
 	}
 
+}
+
+public static void writecalendar(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException{
+	Statement mst = c.createStatement();
+	Statement ms1 = c.createStatement();
+	ResultSet rs2;
+	ResultSet rs = mst.executeQuery("SELECT NOM,NUMERO FROM MEDECINS ORDER BY NOM");
+	int i = 3;
+	int j;
+	while(rs.next()){
+		j = 0;
+		WritableSheet ms = output.createSheet(rs.getString("NOM"), i);
+		Label l1,l2;
+		rs2 = ms1.executeQuery("SELECT JOUR,URGENCES,INTERIEUR FROM GARDES WHERE URGENCES = "+rs.getInt("NUMERO")+" OR INTERIEUR = "+rs.getInt("NUMERO"));
+		while (rs2.next()){
+			l1 = new Label(0,j,rs2.getString("JOUR"));
+			if(rs2.getInt("INTERIEUR")==rs.getInt("NUMERO")){
+				l2 = new Label(1,j,"interieur");
+			}
+			else{
+				l2 = new Label(1,j,"service");
+			}
+			ms.addCell(l1);
+			ms.addCell(l2);
+			j++;
+		}
+		i++;
+	}
 }
 
 }
