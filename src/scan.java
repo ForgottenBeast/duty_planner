@@ -11,10 +11,9 @@ import java.util.Calendar;
 import java.util.Date; 
 import org.joda.time.*;
 
-import java.util.Formatter;
+
 import jxl.*;
 import jxl.read.biff.BiffException;
-import jxl.write.Number;
 import jxl.write.*;
 import jxl.write.biff.RowsExceededException;
 
@@ -147,8 +146,7 @@ while(rs2.next()){
  }
  
  public static void genplanning(Connection c, Workbook data,boolean hasint) throws ParseException, SQLException{
-	 int prevurg,prevint,curg,nbinterieur;
-	 boolean medundefined,interieurundefined;
+	 int prevurg,prevint,curg;
 	 int newdowcount = 0;
 	 Sheet mst = data.getSheet(3);
 	 int repos = Integer.parseInt(mst.getCell(2,1).getContents());
@@ -157,7 +155,6 @@ while(rs2.next()){
 	 curg = 666;
 	 prevint = 666;
 	 int curgarde = 0;
-	 int nmed = 0;
 	 SimpleDateFormat formatter = new SimpleDateFormat("dd MM yyyy hh:mm:ss");
 	 Date datedebut,curdat,datefin;
 	 Sheet msheet = data.getSheet(3);
@@ -165,23 +162,24 @@ while(rs2.next()){
 	 datefin = formatter.parse(msheet.getCell(1,1).getContents());
 	 curdat = datedebut;
 	 while(!curdat.after(datefin)){
+		 System.out.println("prevurg = "+prevurg+" prevint = "+prevint);
 		 String dowtoinc = getdow(curdat);
 		 dunit garde = new dunit(666, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
-		garde = selecttoubib(repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
-	
+			if(hasint){
+				garde.medundefined = true;
+			garde = selecttoubib(repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
+			curg = garde.curg;
+			System.out.println("curg = "+curg);
+			if(garde.medundefined){
+				System.out.println("arr outta luck");
+				break;
+			}
+			dorecord(c,garde,true,formatter);
+			}
+		 garde = selecttoubib(repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
 		dorecord(c,garde,false,formatter);
-		if(hasint){
-			garde.medundefined = true;
-		garde = selecttoubib(repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
-		if(garde.medundefined){
-			System.out.println("arr outta luck");
-			break;
-		}
-		dorecord(c,garde,true,formatter);
-		prevint = garde.curint;
-		}
 		prevurg = garde.curg;
-		
+		prevint = curg;
 		cal.setTime(curdat);
 		cal.add(Calendar.DATE, 1);
 		curdat = cal.getTime();
@@ -371,9 +369,10 @@ while(rs2.next()){
 	 return itis;
  }
  
+
+ 
  public static dunit selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
 	 Statement ms2 = c.createStatement();
-	 Statement ms3 = c.createStatement();
 	 Statement ms = c.createStatement();
 	 boolean ferie = false;
 	 dunit res = new dunit(curgarde, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
@@ -388,12 +387,16 @@ while(rs2.next()){
 	 }
 		 System.out.println(fmt.format(curdat).concat(" n'est pas férié"));
 		 if(!interieur){
-			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" ORDER BY SERVICES.INTERIEUR ASC, NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 		 }
 		 else{
-			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE S.INTERIEUR = TRUE ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 		 } 
 		 while(rs.next()){
+			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && rs.getInt("SERVICE") == curg)){
+			 			 System.out.println("problem : prevurg = "+prevurg+" prevint = "+prevint+" curg = "+curg+" rs.getint(service)= "+rs.getInt("SERVICE"));
+			 			 continue;
+			 		 }
 					 if(isgtg(curg,prevint,prevurg,c,curdat,fmt,rs,dowtoinc,interieur,repos)){
 						 res.curgarde = rs.getInt("NBGARDES")+1;
 						 res.newdowcount = rs.getInt(dowtoinc)+1;
@@ -409,12 +412,9 @@ while(rs2.next()){
 						 }
 						 res.dowtoinc = dowtoinc;
 						 res.jour = fmt.format(curdat);
-						 if(interieur){
-							 res.curint = rs.getInt("SERVICE");
-						 }
-						 else{
+				
 							 res.curg = rs.getInt("SERVICE");
-						 }
+						 
 						 
 						res.nmed = rs.getInt("NUMERO");
 						System.out.println("Returning toubib number "+res.nmed);
@@ -449,7 +449,8 @@ while(rs2.next()){
 
  
 public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDateFormat fmt) throws SQLException, ParseException{
-	 Statement ms = c.createStatement();
+	System.out.println("toubib "+garde.nmed+" nbgarde = "+garde.curgarde); 
+	Statement ms = c.createStatement();
 	 Calendar cal = Calendar.getInstance();
 	 cal.setTime(fmt.parse(garde.jour));
 	 java.sql.Date sqldate = new java.sql.Date(cal.getTime().getTime());
@@ -460,11 +461,11 @@ public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDa
 	 }
 	 rs = ms.executeUpdate("update MEDECINS set ".concat(garde.dowtoinc).concat(" = ").concat(Integer.toString(garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
-	 if(interieur){
-		 rs = ms.executeUpdate("UPDATE GARDES SET INTERIEUR = ".concat(Integer.toString(garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
+	 if(!interieur){
+		 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
 	 }
 	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(garde.nmed)).concat(")"));
+		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,INTERIEUR) VALUES('"+sqldate+"',".concat(Integer.toString(garde.nmed)).concat(")"));
 	 }
  }
 
@@ -479,7 +480,7 @@ public static void writeoutput(Connection c, WritableWorkbook output,boolean has
 public static void writegps(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException{
 	WritableSheet ms = output.createSheet("GPS", 2);
 	Statement mst = c.createStatement();
-	ResultSet rs = mst.executeQuery("SELECT G.JOUR AS JOUR, S.NOM AS S1, S2.NOM AS S2 FROM SERVICES AS S2 INNER JOIN (SERVICES AS S INNER JOIN (MEDECINS AS M2 INNER JOIN (GARDES AS G INNER JOIN MEDECINS AS M ON G.URGENCES = M.NUMERO)ON M2.NUMERO = G.INTERIEUR) ON S.NUMERO = M.SERVICE) ON S.NUMERO = M2.SERVICE");
+	ResultSet rs = mst.executeQuery("SELECT G.JOUR AS JOUR, S.NOM AS S1,s2.NOM AS S2N FROM(((GARDES AS G INNER JOIN MEDECINS AS M ON G.URGENCES = M.NUMERO)INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO)INNER JOIN MEDECINS AS M2 ON G.INTERIEUR = M2.NUMERO)INNER JOIN SERVICES AS S2 ON M2.SERVICE = S2.NUMERO");
 	int i = 1;
 	Label l1,l2,l3;
 	l1 = new Label(0,0,"Date");
@@ -491,7 +492,7 @@ public static void writegps(Connection c, WritableWorkbook output,boolean hasint
 	while(rs.next()){
 		l1 = new Label(0,i,rs.getString("JOUR"));
 		l2 = new Label(1,i,rs.getString("S1"));
-		l3 = new Label(2,i,rs.getString("S2"));
+		l3 = new Label(2,i,rs.getString("S2N"));
 		ms.addCell(l3);
 		ms.addCell(l1);
 		ms.addCell(l2);
@@ -502,44 +503,24 @@ public static void writegps(Connection c, WritableWorkbook output,boolean hasint
 public static void writegardes(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
 	WritableSheet ms = output.createSheet("planning", 0);
 	Statement mst = c.createStatement();
-	Statement ms2 = c.createStatement();
-	ResultSet rs = mst.executeQuery("SELECT * FROM GARDES ORDER BY JOUR ASC");
-	ResultSet rs2;
-	int i = 1;
-	String st = null;
+	ResultSet rs = mst.executeQuery("SELECT G.JOUR AS JOUR, M.NOM AS M1, M2.NOM AS M2N FROM (GARDES AS G INNER JOIN MEDECINS AS M ON G.URGENCES = M.NUMERO ) INNER JOIN MEDECINS AS M2 ON G.INTERIEUR = M2.NUMERO ORDER BY JOUR ASC");
 	Label l1,l2,l3;
-	l1 = new Label(0,0,"Date");
-	l2 = new Label(1,0,"Urgences");
-	if(hasint){
-	l3 = new Label(2,0,"Interieur");
-	ms.addCell(l3);
-	}
+	int i = 1;
+	l1 = new Label(0,0,"date");
+	l2 = new Label(1,0,"urgence");
+	l3 = new Label(2,0,"interieur");
 	ms.addCell(l1);
 	ms.addCell(l2);
-	
+	ms.addCell(l3);
 	while(rs.next()){
-		
 		l1 = new Label(0,i,rs.getString("JOUR"));
-		rs2 = ms2.executeQuery("SELECT NOM FROM MEDECINS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("URGENCES"))));
-		while(rs2.next()){
-			st = rs2.getString("NOM");
-		}
-		l2 = new Label(1,i,st);
-		if(hasint){
-			rs2 = ms2.executeQuery("SELECT NOM FROM MEDECINS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("INTERIEUR"))));
-			while(rs2.next()){
-				st = rs2.getString("NOM");
-			}
-		l3 = new Label(2,i,st);
-		ms.addCell(l3);
-		}
-		
+		l2 = new Label(1,i,rs.getString("M1"));
+		l3 = new Label(2,i,rs.getString("M2N"));
 		ms.addCell(l1);
 		ms.addCell(l2);
-		
+		ms.addCell(l3);
 		i++;
 	}
-
 }
 
 public static void writestats(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{

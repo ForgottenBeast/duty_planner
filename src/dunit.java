@@ -1,4 +1,4 @@
-import java.util.Date;
+
 
 
 public class dunit {
@@ -10,7 +10,6 @@ public class dunit {
     String jour;
     String dowtoinc;
     int curg;
-    int curint;
     int curgarde;
     int newdowcount;
     boolean medundefined;
