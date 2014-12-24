@@ -469,6 +469,37 @@ public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDa
  }
 
 public static void writeoutput(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+	writegardes(c,output,hasint);
+	writestats(c,output,hasint);
+	writegps(c,output,hasint);
+	output.write();	
+	output.close();
+}
+
+public static void writegps(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException{
+	WritableSheet ms = output.createSheet("GPS", 2);
+	Statement mst = c.createStatement();
+	ResultSet rs = mst.executeQuery("SELECT G.JOUR AS JOUR, S.NOM AS S1, S2.NOM AS S2 FROM SERVICES AS S2 INNER JOIN (SERVICES AS S INNER JOIN (MEDECINS AS M2 INNER JOIN (GARDES AS G INNER JOIN MEDECINS AS M ON G.URGENCES = M.NUMERO)ON M2.NUMERO = G.INTERIEUR) ON S.NUMERO = M.SERVICE) ON S.NUMERO = M2.SERVICE");
+	int i = 1;
+	Label l1,l2,l3;
+	l1 = new Label(0,0,"Date");
+	l2 = new Label(1,0,"Urgences");
+	l3 = new Label(2,0,"Interieur");
+	ms.addCell(l3);
+	ms.addCell(l1);
+	ms.addCell(l2);
+	while(rs.next()){
+		l1 = new Label(0,i,rs.getString("JOUR"));
+		l2 = new Label(1,i,rs.getString("S1"));
+		l3 = new Label(2,i,rs.getString("S2"));
+		ms.addCell(l3);
+		ms.addCell(l1);
+		ms.addCell(l2);
+		i++;
+	}
+}
+
+public static void writegardes(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
 	WritableSheet ms = output.createSheet("planning", 0);
 	Statement mst = c.createStatement();
 	Statement ms2 = c.createStatement();
@@ -508,42 +539,35 @@ public static void writeoutput(Connection c, WritableWorkbook output,boolean has
 		
 		i++;
 	}
-	output.write();
-	output.close();
+
 }
-public static void test(Connection c, WritableWorkbook output) throws SQLException, WriteException, IOException{
-	 Statement ms = c.createStatement();
-	 WritableSheet msheet = output.createSheet("services", 0);
-	 ResultSet rs = ms.executeQuery("SELECT * FROM SERVICES");
-	 boolean mbool;
-	 String nom,numero;
-	 int j;
-	 j = 1;
-	 Label l1,l2,l3;
-	 l1 = new Label(0,0,"service");
-	 l2 = new Label(1,0,"Interieur");
-	 l3 = new Label(2,0,"Numero");
-	 msheet.addCell(l1);
-		msheet.addCell(l2);
-		msheet.addCell(l3);
-	 while(rs.next()){
-		 mbool = rs.getBoolean("INTERIEUR");
-		 numero = Integer.toString(rs.getInt("NUMERO"));
-		 nom = rs.getString("NOM");
-		 l1 = new Label(0,j,nom);
-		 if(mbool){
-			 l2 = new Label(1,j,"y");
-		 }
-		 else{
-			 l2 = new Label(1,j,"");
-		 }
-		l3 = new Label (2,j,numero);
-		msheet.addCell(l1);
-		msheet.addCell(l2);
-		msheet.addCell(l3);
-		j++;
-	 }
-	 output.write();
-	 output.close();
- }
+
+public static void writestats(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+	WritableSheet ms = output.createSheet("stats", 1);
+	Statement mst = c.createStatement();
+	ResultSet rs = mst.executeQuery("SELECT M.NOM AS NOM, M.NBSEMESTRES AS SEMESTRE, M.NBGARDES AS NBGARDES, S.NOM AS service FROM MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO order by SERVICE ASC, SEMESTRE ASC, NOM ASC");
+	Label l1,l2,l3,l4;
+	l1 = new Label(0,0,"nom");
+	l2 = new Label(1,0,"score");
+	l3 = new Label(2,0,"nbgardes");
+	l4 = new Label(3,0,"service");
+	ms.addCell(l1);
+	ms.addCell(l2);
+	ms.addCell(l3);
+	ms.addCell(l4);
+	int i = 1;
+	while(rs.next()){
+		l1 = new Label(0,i,rs.getString("NOM"));
+		l2 = new Label(1,i,Integer.toString(rs.getInt("SEMESTRE")));
+		l3 = new Label(2,i,Integer.toString(rs.getInt("NBGARDES")));
+		l4 = new Label(3,i,rs.getString("service"));
+		ms.addCell(l1);
+		ms.addCell(l2);
+		ms.addCell(l3);
+		ms.addCell(l4);
+		i++;
+	}
+
+}
+
 }
