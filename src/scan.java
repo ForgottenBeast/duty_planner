@@ -162,8 +162,6 @@ while(rs2.next()){
 	 SimpleDateFormat formatter = new SimpleDateFormat("dd MM yyyy hh:mm:ss");
 	 Date datedebut,curdat,datefin;
 	 Sheet msheet = data.getSheet(3);
-	 System.out.println("date debut is".concat(formatter.format(formatter.parse(msheet.getCell(0, 1).getContents()))).concat("datefin is ").concat(msheet.getCell(1,1).getContents()));
-		
 	 datedebut = formatter.parse(msheet.getCell(0,1).getContents());
 	 datefin = formatter.parse(msheet.getCell(1,1).getContents());
 	 curdat = datedebut;
@@ -175,17 +173,13 @@ while(rs2.next()){
 		 String dowtoinc = getdow(curdat);
 		 dunit garde = new dunit(666, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
 		garde = selecttoubib(repos,curg,prevurg,prevint,medundefined,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
-		if(garde.medundefined){
-			System.out.println("yarr, we are outta luck");
-			break outloop;
-		}
+	
 		dorecord(c,garde,false,formatter);
 		if(hasint){
 			garde.medundefined = true;
+			garde.nmed = 0;
 		garde = selecttoubib(repos,curg,prevurg,prevint,interieurundefined,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
-		if(garde.medundefined){
-			break outloop;
-		}
+	
 		dorecord(c,garde,true,formatter);
 		prevint = garde.curint;
 		}
@@ -206,149 +200,217 @@ while(rs2.next()){
 	 }
 	 return false;
  }
-
- public static dunit selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
+ 
+ public static dunit selferie(Connection c,Date curdat, dunit garde,String dowtoinc,boolean interieur,SimpleDateFormat fmt) throws SQLException{
+	 Statement ms= c.createStatement();
 	 Statement ms2 = c.createStatement();
-	 Statement ms3 = c.createStatement();
-	 Statement ms = c.createStatement();
-	 dunit res = new dunit(curgarde, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
-	 ResultSet rs,rs2,rs3;
-	 if(dateferiee(curdat,c,fmt)){
-		 System.out.println("férié!");
-		 if(!interieur){
-			 System.out.println("doing not interieur after férié dowtoinc is".concat(dowtoinc));
-			 rs = ms.executeQuery("SELECT M.NUMERO, M.DERNIEREGARDE, M.NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
-		 }
-		 else{
-			 System.out.println("doing else after férié");
-			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
-		 }
+	 ResultSet rs,rs2;
+	 dunit res = garde;
+	 System.out.println("férié!");
+	 if(!interieur){
+		 System.out.println("doing not interieur after férié dowtoinc is".concat(dowtoinc));
+		 rs = ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE as DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(" as "+dowtoinc+",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
 		 while(rs.next()){
+			 int nbferie = 0;
+		rs2 = ms2.executeQuery("SELECT NBFERIES FROM MEDECINS WHERE NUMERO = "+rs.getInt("NUMERO"));
+		while(rs2.next()){
+			nbferie = rs2.getInt("NBFERIES");
+				 }
 			 res.nmed = rs.getInt("NUMERO");
+			 res.nbferies = nbferie;
 			 res.curgarde = rs.getInt("NBGARDES")+1;
 			 res.newdowcount = rs.getInt(dowtoinc)+1;
 			 res.medundefined = false;
 			 res.jour = fmt.format(curdat);
 			 res.dowtoinc = dowtoinc;
-			 if(!interieur){
-				 res.curg = rs.getInt("SERVICE");
-			 }
-			 System.out.println("returning toubib number ".concat(Integer.toString(res.nmed)).concat("for date").concat(res.jour));
+			 res.ferie = true;
+			 res.curg = rs.getInt("SERVICE");
+			 System.out.println("chose toubib number "+res.nmed+" for jour ferie interieur ".concat(fmt.format(curdat)));
 			 return res;
 		 }
 	 }
 	 else{
+		 System.out.println("doing else after férié");
+		 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
+	 
+	 while(rs.next()){
+		 int nbferie = 0;
+			rs2 = ms2.executeQuery("SELECT NBFERIES FROM MEDECINS WHERE NUMERO = "+rs.getInt("NUMERO"));
+			while(rs2.next()){
+				nbferie = rs2.getInt("NBFERIES");
+					 }
+		 res.nmed = rs.getInt("NUMERO");
+		 res.curgarde = rs.getInt("NBGARDES")+1;
+		 res.newdowcount = rs.getInt(dowtoinc)+1;
+		 res.medundefined = false;
+		 res.ferie = true;
+		 res.nbferies = nbferie;
+		 res.jour = fmt.format(curdat);
+		 res.dowtoinc = dowtoinc;
+			 res.curg = rs.getInt("SERVICE");
+		 System.out.println("returning toubib number ".concat(Integer.toString(res.nmed)).concat("for date").concat(res.jour));
+		 return res;
+	 }
+ }
+	 res.medundefined = true;
+	 return res;
+ }
+
+ public static boolean isgtg(int curg,int prevint,int prevurg,Connection c,Date curdat, SimpleDateFormat fmt,ResultSet rs,String dowtoinc,boolean interieur,int repos) throws SQLException, ParseException{
+	 Statement ms2 = c.createStatement();
+	 Statement ms3 = c.createStatement();
+	 ResultSet rs2;
+	 ResultSet rs3;
+	 boolean gtg =  true;
+	 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+	 while(rs2.next()){
+		 if(curdat.after(fmt.parse(rs2.getString("DATEDEBUT"))) && curdat.before(fmt.parse(rs2.getString("DATEFIN")))){
+			 gtg = false;
+			 System.out.println("c'est dans les vacances de ".concat(Integer.toString(rs.getInt("NUMERO"))));
+			 
+			 break;
+		 }
+	 }
+	 if(!gtg){
+		 System.out.println("not gtg : vacances");
+	 }
+	 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+	 int nbdays = Days.daysBetween(new org.joda.time.DateTime(fmt.parse(rs.getString("DERNIEREGARDE"))), new org.joda.time.DateTime(curdat)).getDays();
+	 while(rs3.next()){
+		 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR")))).getDays();
+		 if(daysbf < 0){
+			 daysbf = daysbf*(-1);
+		 }
+		 gtg = gtg && (daysbf >= repos) && ((nbdays >= repos)||(nbdays < 0));
+		 if(!gtg){
+			 System.out.println("not gtg : number of days jours feries DAYSBF = "+daysbf+"nbdays = "+nbdays+"repos = "+repos);
+		 }
+	 }
+	 System.out.println(Integer.toString(nbdays));
+	 gtg = gtg && ((nbdays >= repos)||(nbdays < 0));
+	 if(!gtg){
+	 System.out.println("not gtg : number of days repos = ".concat(Integer.toString(nbdays)));
+	 }
+	 if (rs.getInt("NBSEMESTRES") == 0){
+		
+		
+		if(interieur){
+			gtg = gtg && (rs.getInt("SERVICE")!=curg);
+		}
+		if(!gtg){
+			System.out.println("not gtg : nbsemestre 0");
+		}
+	 }
+	 else if(rs.getInt("NBSEMESTRES")== 3 ||rs.getInt("NBSEMESTRES")== 4 ){
+		 gtg = gtg && (rs.getInt("NBGARDES") < 5) && (nbdays > repos);
+		 if(!gtg){
+				System.out.println("not gtg : nbsemestre 3");
+	}
+		 if(dowtoinc == "NBJEUDI"){
+			 gtg = gtg && (rs.getInt(dowtoinc) == 0);
+			 if(!gtg){
+					System.out.println("not gtg : nbjeudi 3");
+		}
+		 }
+		 else if(dowtoinc == "NBVENDREDI"){
+		
+			 gtg = gtg && (rs.getInt(dowtoinc)==0);
+			 if(!gtg){
+					System.out.println("not gtg 3 nbvendredi");
+		}
+		 }
+		 else if (dowtoinc == "NBDIMANCHE"){
+			 gtg = gtg && (rs.getInt(dowtoinc) == 0);
+			 if(!gtg){
+					System.out.println("not gtg 3 nbdimanche");
+		}
+		 }
+		 else if(dateferiee(curdat,c,fmt)&&dowtoinc!="NBDIMANCHE"){
+			 gtg = gtg && (rs.getInt("NBDIMANCHE") == 0);
+			 if(!gtg){
+					System.out.println("not gtg 3 jour ferie");
+		}
+		 }
+		 if(interieur){
+			 gtg = gtg && rs.getInt("SERVICE") != curg;
+			 if(!gtg){
+					System.out.println("not gtg interieur = curg");
+		}
+		 }
+	 }
+	 else if(rs.getInt("NBSEMESTRES") >= 5){
+		 gtg = gtg && rs.getInt("NBGARDES") < 3 && !dateferiee(curdat,c,fmt);
+		 if(!gtg){
+				System.out.println("not gtg 5 nbgardes");
+	}
+		 if((dowtoinc == "NBVENDREDI")||(dowtoinc == "NBSAMEDI")||(dowtoinc=="NBDIMANCHE")){
+			 gtg = false;
+		 }
+		 if(interieur){
+			 gtg = gtg && rs.getInt("SERVICE") != curg;
+			 if(!gtg){
+					System.out.println("not gtg 5 service =  curg");
+		}
+		 
+		 }
+		 gtg = gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
+		 if(!gtg){
+				System.out.println("not gtg 5 service = prevurg or prevint");
+	}
+	 }
+	
+	 return gtg;
+ }
+ 
+ public static boolean isreserved(boolean interieur,Connection c,Date curdat, SimpleDateFormat fmt) throws SQLException{
+	 boolean itis = false;
+	 Statement ms = c.createStatement();
+	 ResultSet rs2 = ms.executeQuery("SELECT NUMERO FROM JOURS_FERIES WHERE JOUR = '".concat(fmt.format(curdat))+"' AND INTERIEUR = "+interieur);
+	 while(rs2.next()){
+		 itis = true;
+	 }
+	 if(itis){
+		 System.out.println("c'est reserve");
+	 }
+	 return itis;
+ }
+ 
+ public static dunit selecttoubib(int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc,SimpleDateFormat fmt) throws SQLException, ParseException{
+	 Statement ms2 = c.createStatement();
+	 Statement ms3 = c.createStatement();
+	 Statement ms = c.createStatement();
+	 boolean ferie = false;
+	 dunit res = new dunit(curgarde, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
+	 ResultSet rs,rs2;
+	 if(dateferiee(curdat,c,fmt)){
+		 if(isreserved(interieur,c,curdat,fmt)){
+		 res = selferie(c,curdat,res,dowtoinc,interieur,fmt);
+		 if(!res.medundefined){
+			 return res;
+		 }
+		 }
+	 }
 		 System.out.println(fmt.format(curdat).concat(" n'est pas férié"));
 		 if(!interieur){
 			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 		 }
 		 else{
 			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE S.INTERIEUR = TRUE ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
-		 }
-		 loops:
+		 } 
 		 while(rs.next()){
-			 System.out.println("examining toubib ".concat(Integer.toString(rs.getInt("NUMERO"))));
-			 boolean gtg = true;
-			 
-			 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
-			 while(rs2.next()){
-				 if(curdat.after(fmt.parse(rs2.getString("DATEDEBUT"))) && curdat.before(fmt.parse(rs2.getString("DATEFIN")))){
-					 gtg = false;
-					 System.out.println("c'est dans les vacances de ".concat(Integer.toString(rs.getInt("NUMERO"))));
-					 
-					 break;
-				 }
-			 }
-			 if(!gtg){
-				 System.out.println("not gtg : vacances");
-			 }
-					 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
-					 int nbdays = Days.daysBetween(new org.joda.time.DateTime(fmt.parse(rs.getString("DERNIEREGARDE"))), new org.joda.time.DateTime(curdat)).getDays();
-					 while(rs3.next()){
-						 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR")))).getDays();
-						 int daysaf= Days.daysBetween(new org.joda.time.DateTime(fmt.parse(rs3.getString("JOUR"))), new org.joda.time.DateTime(curdat)).getDays();
-						 gtg = gtg && ((daysaf > repos)||(daysbf > repos)) && ((nbdays > repos)||(nbdays < 0));
-						 if(!gtg){
-							 System.out.println("not gtg : number of days jours feries");
-						 }
-					 }
-					 System.out.println(Integer.toString(nbdays));
-					 gtg = gtg && ((nbdays >= repos)||(nbdays < 0));
-					 if(!gtg){
-					 System.out.println("not gtg : number of days repos = ".concat(Integer.toString(nbdays)));
-					 }
-					 if (rs.getInt("NBSEMESTRES") == 0){
-						
-						
-						if(interieur){
-							gtg = gtg && (rs.getInt("SERVICE")!=curg);
-						}
-						if(!gtg){
-							System.out.println("not gtg : nbsemestre 0");
-						}
-					 }
-					 else if(rs.getInt("NBSEMESTRES")== 3 ||rs.getInt("NBSEMESTRES")== 4 ){
-						 gtg = gtg && (rs.getInt("NBGARDES") < 5) && (nbdays > repos);
-						 if(!gtg){
-								System.out.println("not gtg : nbsemestre 3");
-					}
-						 if(dowtoinc == "NBJEUDI"){
-							 gtg = gtg && (rs.getInt(dowtoinc) == 0);
-							 if(!gtg){
-									System.out.println("not gtg : nbjeudi 3");
-						}
-						 }
-						 else if(dowtoinc == "NBVENDREDI"){
-						
-							 gtg = gtg && (rs.getInt(dowtoinc)==0);
-							 if(!gtg){
-									System.out.println("not gtg 3 nbvendredi");
-						}
-						 }
-						 else if (dowtoinc == "NBDIMANCHE"){
-							 gtg = gtg && (rs.getInt(dowtoinc) == 0);
-							 if(!gtg){
-									System.out.println("not gtg 3 nbdimanche");
-						}
-						 }
-						 else if(dateferiee(curdat,c,fmt)&&dowtoinc!="NBDIMANCHE"){
-							 gtg = gtg && (rs.getInt("NBDIMANCHE") == 0);
-							 if(!gtg){
-									System.out.println("not gtg 3 jour ferie");
-						}
-						 }
-						 if(interieur){
-							 gtg = gtg && rs.getInt("SERVICE") != curg;
-							 if(!gtg){
-									System.out.println("not gtg interieur = curg");
-						}
-						 }
-					 }
-					 else if(rs.getInt("NBSEMESTRES") >= 5){
-						 gtg = gtg && rs.getInt("NBGARDES") < 3 && !dateferiee(curdat,c,fmt);
-						 if(!gtg){
-								System.out.println("not gtg 5 nbgardes");
-					}
-						 if((dowtoinc == "NBVENDREDI")||(dowtoinc == "NBSAMEDI")||(dowtoinc=="NBDIMANCHE")){
-							 continue;
-						 }
-						 if(interieur){
-							 gtg = gtg && rs.getInt("SERVICE") != curg;
-							 if(!gtg){
-									System.out.println("not gtg 5 service =  curg");
-						}
-						 
-						 }
-						 gtg = gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
-						 if(!gtg){
-								System.out.println("not gtg 5 service = prevurg or prevint");
-					}
-					 }
-					
-					 if(gtg){
+					 if(isgtg(curg,prevint,prevurg,c,curdat,fmt,rs,dowtoinc,interieur,repos)){
 						 res.curgarde = rs.getInt("NBGARDES")+1;
 						 res.newdowcount = rs.getInt(dowtoinc)+1;
 						 res.medundefined = false;
+						 res.ferie = ferie;
+						 if(ferie){
+							 int nbferie = 0;
+								rs2 = ms2.executeQuery("SELECT NBFERIES FROM MEDECINS WHERE NUMERO = "+rs.getInt("NUMERO"));
+								while(rs2.next()){
+									nbferie = rs2.getInt("NBFERIES");
+										 }
+							 res.nbferies = nbferie;
+						 }
 						 res.dowtoinc = dowtoinc;
 						 res.jour = fmt.format(curdat);
 						 if(interieur){
@@ -359,13 +421,13 @@ while(rs2.next()){
 						 }
 						 
 						res.nmed = rs.getInt("NUMERO");
-						 break;
+						return res;
 					 }
 				 }
-			 }
+	res.medundefined = true;		 
 	 return res;
 		 }
- 
+
  public static String getdow(Date curdat){
 	 Calendar cal = Calendar.getInstance();
 	 cal.setTime(curdat);
@@ -395,6 +457,10 @@ public static void dorecord(Connection c, dunit garde,boolean interieur,SimpleDa
 	 cal.setTime(fmt.parse(garde.jour));
 	 java.sql.Date sqldate = new java.sql.Date(cal.getTime().getTime());
 	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '".concat(garde.jour).concat("' WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
+	 if(garde.ferie){
+		 int newf = garde.nbferies + 1;
+		 rs = ms.executeUpdate("UPDATE MEDECINS SET NBFERIES = "+newf+" WHERE NUMERO = "+garde.nmed);
+	 }
 	 rs = ms.executeUpdate("update MEDECINS set ".concat(garde.dowtoinc).concat(" = ").concat(Integer.toString(garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
 	 if(interieur){

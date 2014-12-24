@@ -14,5 +14,7 @@ public class dunit {
     int curgarde;
     int newdowcount;
     boolean medundefined;
+    boolean ferie;
+    int nbferies;
     // etc
 }
