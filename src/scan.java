@@ -125,7 +125,6 @@ public class scan {
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '".concat(sheet.getCell(2,i).getContents()).concat("'"));
 while(rs2.next()){
 	int nmedecin = rs2.getInt("NUMERO");
-	System.out.println(sheet.getCell(0, i).getContents());
 		rs = mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES('".concat(formatter.format(formatter.parse(sheet.getCell(0,i).getContents()))).concat("','").concat(formatter.format(formatter.parse(sheet.getCell(1,i).getContents()))).concat("',").concat(Integer.toString(nmedecin)).concat(")"));
 }
 }
@@ -165,21 +164,19 @@ while(rs2.next()){
 	 datedebut = formatter.parse(msheet.getCell(0,1).getContents());
 	 datefin = formatter.parse(msheet.getCell(1,1).getContents());
 	 curdat = datedebut;
-	  outloop:
 	 while(!curdat.after(datefin)){
-		 System.out.println("iterating at".concat(formatter.format(curdat)));
-		 medundefined = true;
-		 interieurundefined = true;
 		 String dowtoinc = getdow(curdat);
 		 dunit garde = new dunit(666, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
-		garde = selecttoubib(repos,curg,prevurg,prevint,medundefined,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
+		garde = selecttoubib(repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,false,dowtoinc,formatter);
 	
 		dorecord(c,garde,false,formatter);
 		if(hasint){
 			garde.medundefined = true;
-			garde.nmed = 0;
-		garde = selecttoubib(repos,curg,prevurg,prevint,interieurundefined,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
-	
+		garde = selecttoubib(repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,true,dowtoinc,formatter);
+		if(garde.medundefined){
+			System.out.println("arr outta luck");
+			break;
+		}
 		dorecord(c,garde,true,formatter);
 		prevint = garde.curint;
 		}
@@ -206,7 +203,6 @@ while(rs2.next()){
 	 Statement ms2 = c.createStatement();
 	 ResultSet rs,rs2;
 	 dunit res = garde;
-	 System.out.println("férié!");
 	 if(!interieur){
 		 System.out.println("doing not interieur after férié dowtoinc is".concat(dowtoinc));
 		 rs = ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE as DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(" as "+dowtoinc+",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON NUMERO = JF.NUMERO WHERE JF.JOUR = '").concat(fmt.format(curdat)).concat("' and JF.INTERIEUR = FALSE"));
@@ -281,13 +277,13 @@ while(rs2.next()){
 		 if(daysbf < 0){
 			 daysbf = daysbf*(-1);
 		 }
-		 gtg = gtg && (daysbf >= repos) && ((nbdays >= repos)||(nbdays < 0));
+		 gtg = gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
 		 if(!gtg){
 			 System.out.println("not gtg : number of days jours feries DAYSBF = "+daysbf+"nbdays = "+nbdays+"repos = "+repos);
 		 }
 	 }
 	 System.out.println(Integer.toString(nbdays));
-	 gtg = gtg && ((nbdays >= repos)||(nbdays < 0));
+	 gtg = gtg && ((nbdays > repos)||(nbdays < 0));
 	 if(!gtg){
 	 System.out.println("not gtg : number of days repos = ".concat(Integer.toString(nbdays)));
 	 }
@@ -421,6 +417,7 @@ while(rs2.next()){
 						 }
 						 
 						res.nmed = rs.getInt("NUMERO");
+						System.out.println("Returning toubib number "+res.nmed);
 						return res;
 					 }
 				 }
