@@ -1,5 +1,7 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -47,9 +49,9 @@ public class scan {
 		 
 		
 		 
-		 filltables(c,data,hasint);
+		 SimpleDateFormat fmt = filltables(c,data,hasint);
 		
-		 genplanning(c,data,hasint);
+		 genplanning(fmt,c,data,hasint);
 		 
 		
 		 
@@ -90,14 +92,24 @@ public class scan {
 
 
 
- public static void filltables(Connection c, Workbook data,boolean hasint) throws SQLException, ParseException {
+ public static SimpleDateFormat filltables(Connection c, Workbook data,boolean hasint) throws SQLException, ParseException {
 	 Statement mystatement = c.createStatement();
 	 Statement ms2 = c.createStatement();
 	 int rs;
-	 SimpleDateFormat formatter = new SimpleDateFormat("dd MM yyyy hh:mm:ss");
+	 SimpleDateFormat formatter;
+	 Sheet sheet = data.getSheet(3);
+	 Pattern pattern = Pattern.compile("[0-3] [0-9] [0-1][0-9] [0-9][0-9][0-9][0-9] [0-2][0-9]:[0-6][0-9]:[0-6][0-9]");
+	 Matcher matcher = pattern.matcher(sheet.getCell(0,1).getContents());
+	 if(matcher.find()){
+		 formatter = new SimpleDateFormat("dd MM yyyy hh:mm:ss");
+ 	}
+ 	else{
+ 		formatter = new SimpleDateFormat("dd/MM/yyyy");
+ 	}
 	 boolean mbool;
 	 ResultSet rs2;
-	 Sheet sheet = data.getSheet(4);
+	 
+	 sheet = data.getSheet(4);
 	for (int i = 1; i < sheet.getRows();i++){
 		if(sheet.getCell(1,i).getCellFormat() != null){
 			rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',TRUE)"));
@@ -148,9 +160,10 @@ while(rs2.next()){
 		}
 		}
 		}
+	return formatter;
  }
  
- public static void genplanning(Connection c, Workbook data,boolean hasint) throws ParseException, SQLException{
+ public static void genplanning(SimpleDateFormat formatter, Connection c, Workbook data,boolean hasint) throws ParseException, SQLException{
 	 int prevurg,prevint,curg;
 	 int newdowcount = 0;
 	 Sheet mst = data.getSheet(3);
@@ -160,7 +173,6 @@ while(rs2.next()){
 	 curg = 666;
 	 prevint = 666;
 	 int curgarde = 0;
-	 SimpleDateFormat formatter = new SimpleDateFormat("dd MM yyyy hh:mm:ss");
 	 Date datedebut,curdat,datefin;
 	 Sheet msheet = data.getSheet(3);
 	 datedebut = formatter.parse(msheet.getCell(0,1).getContents());
