@@ -7,7 +7,7 @@ public class dunit {
 	
 }
 	int nmed;
-    String jour;
+    java.sql.Date jour;
     String dowtoinc;
     int curg;
     int curgarde;
