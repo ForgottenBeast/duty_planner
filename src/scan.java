@@ -172,9 +172,14 @@ while(rs2.next()){
 		}
 		}
 		else{
+			if(hasint){
 			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,INTERIEUR) VALUES('"+d1+"',TRUE)");
 			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,INTERIEUR) VALUES('"+d1+"',FALSE)");
-		}
+			}
+			else{
+				rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR) VALUES('"+d1+"')");
+			}
+			}
 		}
  }
  
@@ -213,7 +218,7 @@ while(rs2.next()){
 			garde = null;
 		 garde = selecttoubib(hasint,repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,false,dowtoinc);
 		 if(garde.medundefined){
-				break;
+			 break;
 			}
 		 dorecord(c,garde,false,hasint);
 		prevurg = garde.curg;
@@ -307,7 +312,6 @@ while(rs2.next()){
 	 while(rs2.next()){
 		 if(curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))){
 			 gtg = false;
-			
 			 break;
 		 }
 	 }
@@ -323,11 +327,10 @@ while(rs2.next()){
 			 daysbf = daysbf*(-1);
 		 }
 		 gtg = gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
-		
+		 
 	 }
 	
 	 gtg = gtg && ((nbdays > repos)||(nbdays < 0));
-	
 	 if (rs.getInt("NBSEMESTRES") == 0){
 		
 		
@@ -341,12 +344,12 @@ while(rs2.next()){
 
 		 if(dowtoinc == "NBJEUDI"){
 			 gtg = gtg && (rs.getInt(dowtoinc) == 0);
-			 		
+			 
 		 }
 		 else if(dowtoinc == "NBVENDREDI"){
 		
 			 gtg = gtg && (rs.getInt(dowtoinc)==0);
-			
+			 
 			 
 		 }
 		 else if (dowtoinc == "NBDIMANCHE"){
@@ -355,11 +358,11 @@ while(rs2.next()){
 		 }
 		 else if(dateferiee(curdat,c)&&dowtoinc!="NBDIMANCHE"){
 			 gtg = gtg && (rs.getInt("NBDIMANCHE") == 0);
-			 
+			
 		 }
 		 if(interieur){
 			 gtg = gtg && rs.getInt("SERVICE") != curg;
-			
+			 
 		 }
 	 }
 	 else if(rs.getInt("NBSEMESTRES") >= 5){
@@ -367,6 +370,7 @@ while(rs2.next()){
 		 
 		 if((dowtoinc == "NBVENDREDI")||(dowtoinc == "NBSAMEDI")||(dowtoinc=="NBDIMANCHE")){
 			 gtg = false;
+			 
 		 }
 		 if(interieur){
 			 gtg = gtg && rs.getInt("SERVICE") != curg;
@@ -399,7 +403,8 @@ while(rs2.next()){
 	 return itis;
  }
  
- public static dunit selecttoubib(boolean hasint,int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc) throws SQLException, ParseException{
+ 
+public static dunit selecttoubib(boolean hasint,int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc) throws SQLException, ParseException{
 	 Statement ms2 = c.createStatement();
 	 Statement ms = c.createStatement();
 	 int nextint = 0;
@@ -428,16 +433,22 @@ while(rs2.next()){
 	 			}
 	 		}
 	 	}
+	 
 		 if(!interieur){
+			 if(hasint){
 			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" AND MEDECINS.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+			 }
+			 else{
+				 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, "+dowtoinc+", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ".concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+			 }
 		 }
 		 else{
-			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" AND M.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
-					 
+
+			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" AND M.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 			} 
 		 while(rs.next()){
 			 
-			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||(rs.getInt("SERVICE") == nextint)){
+			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||((rs.getInt("SERVICE") == nextint))&& hasint){
 			 			 continue;
 			 		 }
 					 if(isgtg(curg,prevint,prevurg,c,curdat,rs,dowtoinc,interieur,repos)){
@@ -460,7 +471,7 @@ while(rs2.next()){
 						res.medundefined = false;
 						return res;
 					 }
-				 }
+				 }	 
 	res.medundefined = true;		 
 	 return res;
 		 }
@@ -486,6 +497,7 @@ while(rs2.next()){
 		 return "NBSAMEDI";
 	 }
  }
+
 
 public static void dorecord(Connection c, dunit garde,boolean interieur,boolean hasint) throws SQLException, ParseException{
 	Statement ms = c.createStatement();
