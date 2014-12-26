@@ -393,9 +393,12 @@ while(rs2.next()){
 	 dunit res = new dunit(curgarde, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
 	 ResultSet rs,rs2;
 	 if(dateferiee(curdat,c)){
+		 System.out.println(curdat+" is ferie");
 		 if(isreserved(hasint,interieur,c,curdat)){
+			 System.out.println("is reserved interieur");
 		 res = selferie(hasint,c,curdat,res,dowtoinc,interieur);
 		 if(!res.medundefined){
+			 System.out.println("returning res");
 				 return res;
 		 }
 		 }
@@ -404,21 +407,8 @@ while(rs2.next()){
 			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 		 }
 		 else{
-			 boolean mbool;
-			 mbool = (isreserved(hasint, interieur, c, nextday(curdat)) || isreserved(hasint,!interieur,c,nextday(curdat)));
-			 System.out.println("isreserved nextday("+nextday(curdat)+")="+mbool);		 
-			 if(mbool){
-				 System.out.println("we are the "+curdat+" and "+nextday(curdat)+" is reserved");
-
-				 rs2 = ms2.executeQuery("SELECT M.SERVICE AS SERVICE FROM (JOURS_FERIES AS JF INNER JOIN MEDECINS AS M ON JF.NUMERO = M.NUMERO) WHERE JF.JOUR = "+nextday(curdat));
-				 while(rs2.next()){
-					 nextint = rs2.getInt("SERVICE");
-				 }
-				 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" AND MEDECINS.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
-			 }
-					 else{
-				 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
-					 }
+			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+					 
 			} 
 		 while(rs.next()){
 			 
