@@ -338,7 +338,7 @@ while(rs2.next()){
 	 }
 	 else if(rs.getInt("NBSEMESTRES")== 3 ||rs.getInt("NBSEMESTRES")== 4 ){
 		 gtg = gtg && (rs.getInt("NBGARDES") < 5) && (nbdays > repos);
-		
+
 		 if(dowtoinc == "NBJEUDI"){
 			 gtg = gtg && (rs.getInt(dowtoinc) == 0);
 			 		
