@@ -143,14 +143,16 @@ while(rs2.next()){
 	sheet = data.getSheet(1);
 	for (int i = 1; i < sheet.getRows();i++){
 		DateCell dc = (DateCell)sheet.getCell(0,i);
+		dc = (DateCell) sheet.getCell(0,i);
+		cal.setTime(dc.getDate());
+		d1 = new java.sql.Date(cal.getTimeInMillis());
+		if(sheet.getCell(1,i).getCellFormat() != null){
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '".concat(sheet.getCell(1,i).getContents()).concat("'"));
 		while(rs2.next()){
 		if(hasint){
 			mbool = sheet.getCell(2, i).getCellFormat() != null;
 		int nmedecin = rs2.getInt("NUMERO");
-		dc = (DateCell) sheet.getCell(0,i);
-		cal.setTime(dc.getDate());
-		d1 = new java.sql.Date(cal.getTimeInMillis());
+		
 		if(mbool){
 			
 		rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO,INTERIEUR) VALUES ('"+d1+"',".concat(Integer.toString(nmedecin).concat(",").concat("TRUE").concat(")")));
@@ -159,6 +161,7 @@ while(rs2.next()){
 			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO,INTERIEUR) VALUES ('"+d1+"',".concat(Integer.toString(nmedecin)).concat(",").concat("FALSE").concat(")"));
 
 		}
+
 		}
 		else{
 			int nmedecin = rs2.getInt("NUMERO");
@@ -166,6 +169,11 @@ while(rs2.next()){
 			d1 = new java.sql.Date(cal.getTimeInMillis());
 			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,NUMERO) VALUES ('"+d1+"',".concat(Integer.toString(nmedecin)).concat(")"));
 		}
+		}
+		}
+		else{
+			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,INTERIEUR) VALUES('"+d1+"',TRUE)");
+			rs = mystatement.executeUpdate("INSERT INTO JOURS_FERIES(JOUR,INTERIEUR) VALUES('"+d1+"',FALSE)");
 		}
 		}
  }
@@ -225,8 +233,9 @@ while(rs2.next()){
  public static boolean dateferiee(Date curdat, Connection c) throws SQLException{
 	 Statement ms = c.createStatement();
 	 java.sql.Date madate = new java.sql.Date(curdat.getTime());
-	 ResultSet rs = ms.executeQuery("SELECT * FROM JOURS_FERIES WHERE JOUR='"+madate+"'");
+	 ResultSet rs = ms.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE JOUR='"+madate+"'");
 	 while(rs.next()){
+		 System.out.println(rs.getDate("JOUR"));
 		 return true;
 	 }
 	 return false;
@@ -479,7 +488,7 @@ public static void dorecord(Connection c, dunit garde,boolean interieur,boolean 
 	Statement ms = c.createStatement();
 	java.sql.Date sqldate = garde.jour;
 	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '"+garde.jour+"' WHERE NUMERO = ".concat(Integer.toString(garde.nmed)));
-	 if(garde.ferie){
+	 if(garde.ferie||dateferiee(garde.jour,c)){
 		 int newf = garde.nbferies + 1;
 		 rs = ms.executeUpdate("UPDATE MEDECINS SET NBFERIES = "+newf+" WHERE NUMERO = "+garde.nmed);
 	 }
@@ -576,18 +585,32 @@ public static void writegardes(Connection c, WritableWorkbook output,boolean has
 public static void writestats(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
 	WritableSheet ms = output.createSheet("stats", 1);
 	Statement mst = c.createStatement();
-	ResultSet rs = mst.executeQuery("SELECT M.NOM AS NOM, M.NBSEMESTRES AS SEMESTRE, M.NBGARDES AS NBGARDES, M.NBFERIES AS NBFERIES, S.NOM AS service FROM (MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) order by SERVICE ASC, SEMESTRE ASC, NOM ASC");
-	Label l1,l2,l3,l4,l5;
+	ResultSet rs = mst.executeQuery("SELECT M.NOM AS NOM, M.NBSEMESTRES AS SEMESTRE, M.NBGARDES AS NBGARDES, M.NBFERIES AS NBFERIES,M.NBLUNDI AS NBLUNDI,M.NBMARDI AS NBMARDI,M.NBMERCREDI AS NBMERCREDI, M.NBJEUDI AS NBJEUDI, M.NBVENDREDI AS NBVENDREDI,M.NBSAMEDI AS NBSAMEDI,M.NBDIMANCHE AS NBDIMANCHE, S.NOM AS service FROM (MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) order by SERVICE ASC, SEMESTRE ASC, NOM ASC");
+	Label l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,l12;
 	l1 = new Label(0,0,"nom");
 	l2 = new Label(1,0,"score");
 	l3 = new Label(2,0,"nbgardes");
 	l4 = new Label(3,0,"service");
 	l5 = new Label(4,0,"nbferies");
-	ms.addCell(l5);
+	l6 = new Label(5,0,"nblundi");
+	l7 = new Label(6,0,"nbmardi");
+	l8 = new Label(7,0,"nbmercredi");
+	l9 = new Label(8,0,"nbjeudi");
+	l10 = new Label(9,0,"nbvendredi");
+	l11 = new Label(10,0,"nbsamedi");
+	l12 = new Label(11,0,"nbdimanche");
 	ms.addCell(l1);
 	ms.addCell(l2);
 	ms.addCell(l3);
 	ms.addCell(l4);
+	ms.addCell(l5);
+	ms.addCell(l6);
+	ms.addCell(l7);
+	ms.addCell(l8);
+	ms.addCell(l9);
+	ms.addCell(l10);
+	ms.addCell(l11);
+	ms.addCell(l12);
 	int i = 1;
 	while(rs.next()){
 		l1 = new Label(0,i,rs.getString("NOM"));
@@ -595,11 +618,25 @@ public static void writestats(Connection c, WritableWorkbook output,boolean hasi
 		l3 = new Label(2,i,Integer.toString(rs.getInt("NBGARDES")));
 		l4 = new Label(3,i,rs.getString("service"));
 		l5 = new Label(4,i,Integer.toString(rs.getInt("NBFERIES")));
-		ms.addCell(l5);
+		l6 = new Label(5,i,Integer.toString(rs.getInt("NBLUNDI")));
+		l7 = new Label(6,i,Integer.toString(rs.getInt("NBMARDI")));
+		l8 = new Label(7,i,Integer.toString(rs.getInt("NBMERCREDI")));
+		l9 = new Label(8,i,Integer.toString(rs.getInt("NBJEUDI")));
+		l10 = new Label(9,i,Integer.toString(rs.getInt("NBVENDREDI")));
+		l11 = new Label(10,i,Integer.toString(rs.getInt("NBSAMEDI")));
+		l12 = new Label(11,i,Integer.toString(rs.getInt("NBDIMANCHE")));
 		ms.addCell(l1);
 		ms.addCell(l2);
 		ms.addCell(l3);
 		ms.addCell(l4);
+		ms.addCell(l5);
+		ms.addCell(l6);
+		ms.addCell(l7);
+		ms.addCell(l8);
+		ms.addCell(l9);
+		ms.addCell(l10);
+		ms.addCell(l11);
+		ms.addCell(l12);
 		i++;
 	}
 
