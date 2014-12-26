@@ -235,7 +235,6 @@ while(rs2.next()){
 	 java.sql.Date madate = new java.sql.Date(curdat.getTime());
 	 ResultSet rs = ms.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE JOUR='"+madate+"'");
 	 while(rs.next()){
-		 System.out.println(rs.getDate("JOUR"));
 		 return true;
 	 }
 	 return false;
@@ -315,6 +314,9 @@ while(rs2.next()){
 
 	 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 int nbdays = Days.daysBetween(new org.joda.time.DateTime(rs.getDate("DERNIEREGARDE")), new org.joda.time.DateTime(curdat)).getDays();
+	 if(nbdays < 0){
+		 nbdays = nbdays*(-1);
+	 }
 	 while(rs3.next()){
 		 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
 		 if(daysbf < 0){
@@ -339,20 +341,21 @@ while(rs2.next()){
 		
 		 if(dowtoinc == "NBJEUDI"){
 			 gtg = gtg && (rs.getInt(dowtoinc) == 0);
-		
+			 		
 		 }
 		 else if(dowtoinc == "NBVENDREDI"){
 		
 			 gtg = gtg && (rs.getInt(dowtoinc)==0);
+			
 			 
 		 }
 		 else if (dowtoinc == "NBDIMANCHE"){
 			 gtg = gtg && (rs.getInt(dowtoinc) == 0) && (rs.getInt("NBFERIES") == 0);
-			
+			 
 		 }
 		 else if(dateferiee(curdat,c)&&dowtoinc!="NBDIMANCHE"){
 			 gtg = gtg && (rs.getInt("NBDIMANCHE") == 0);
-			
+			 
 		 }
 		 if(interieur){
 			 gtg = gtg && rs.getInt("SERVICE") != curg;
