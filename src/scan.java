@@ -195,9 +195,7 @@ while(rs2.next()){
 	 dc2 = (DateCell) msheet.getCell(1,1);
 	 datepack monpack = new datepack();
 	 monpack.upto = tosql(dc1.getDate());
-	 monpack.goal = tosql(dc2.getDate());
-	 while(!monpack.upto.after(monpack.goal)){
-		 System.out.println(monpack.upto);
+	 while(!monpack.upto.after(tosql(dc2.getDate()))){
 		 String dowtoinc = getdow(monpack.upto);
 			if(hasint){
 				monpack.garde.medundefined = true;
@@ -218,10 +216,9 @@ while(rs2.next()){
 		 dorecord(monpack,c,false,hasint);
 		prevurg = monpack.garde.curg;
 		prevint = curg;
-		System.out.println(monpack.upto);
 		monpack.upto = nextday(monpack.upto);
-		System.out.println(monpack.upto);
 	 }
+	 monpack.goal = tosql(dc2.getDate());
 	 return monpack;
  }
  
@@ -278,7 +275,6 @@ while(rs2.next()){
 			 res.garde.dowtoinc = dowtoinc;
 			 res.garde.ferie = true;
 			 res.garde.curg = rs.getInt("SERVICE");
-			 System.out.println("first return upto has "+res.upto);
 			 return res;
 		 }
 	 }
@@ -302,11 +298,9 @@ while(rs2.next()){
 		 res.garde.jour = new java.sql.Date(curdat.getTime());
 		 res.garde.dowtoinc = dowtoinc;
 			 res.garde.curg = rs.getInt("SERVICE");
-			 System.out.println("second return upto has"+res.upto);
 			 return res;
 	 } 
  }
-	 System.out.println("returning bad ferie");
 	 res.garde.medundefined = true;
 	 return res;
  }
@@ -496,7 +490,6 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 	 			}
 	 		}
 	 	}
-	 	 System.out.println("returned bad ferie");
 		 if(!interieur){
 			 if(hasint){
 			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" AND MEDECINS.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
@@ -510,7 +503,6 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" AND M.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 			} 
 		 while(rs.next()){
-			 System.out.println("iterating");
 			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||((rs.getInt("SERVICE") == nextint))&& hasint){
 			 			 continue;
 			 		 }
@@ -533,7 +525,6 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 						 res.garde.newdowcount = rs.getInt(dowtoinc)+1;
 						res.garde.medundefined = false;
 						res.upto = curdat;
-						System.out.println("returning new res with upto = "+res.upto);
 						return res;
 					 }
 					 else{
@@ -664,7 +655,7 @@ public static void writegardes(datepack monpack,Connection c, WritableWorkbook o
 		ms.addCell(l2);
 		i++;
 	}
-	if(monpack.upto != monpack.goal){
+	if(monpack.upto.before(monpack.goal)){
 		l1 = new Label(0,i+1,"le tableau de garde n'a pas put être généré jusqu'au bout, voir erreur ci dessous");
 		l2 = new Label(0,i+2,monpack.error);
 		ms.addCell(l1);
