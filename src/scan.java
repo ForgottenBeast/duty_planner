@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.io.File; 
 import java.io.IOException;
 import java.util.Calendar;
@@ -45,16 +44,14 @@ public class scan {
 		 
 		 
 		 boolean hasint = setup(c,data);
-		 
 		
 		 
 		 filltables(c,data,hasint);
 		
-		 genplanning(c,data,hasint);
-		 
+		 datepack monpack = genplanning(c,data,hasint);
 		
 		 
-		 writeoutput(c,workbook,hasint);
+		 writeoutput(monpack,c,workbook,hasint);
 		
 	}
 	
@@ -183,7 +180,7 @@ while(rs2.next()){
 		}
  }
  
- public static void genplanning(Connection c, Workbook data,boolean hasint) throws ParseException, SQLException{
+ public static datepack genplanning(Connection c, Workbook data,boolean hasint) throws ParseException, SQLException{
 	 int prevurg,prevint,curg;
 	 int newdowcount = 0;
 	 Sheet mst = data.getSheet(3);
@@ -193,51 +190,57 @@ while(rs2.next()){
 	 curg = 666;
 	 prevint = 666;
 	 int curgarde = 0;
-	 Date datedebut,curdat,datefin;
 	 Sheet msheet = data.getSheet(3);
 	 dc1 = (DateCell) msheet.getCell(0,1);
 	 dc2 = (DateCell) msheet.getCell(1,1);
-	 datedebut = dc1.getDate();
-	 datefin = dc2.getDate();
-	 curdat = datedebut;
-	 while(!curdat.equals(datefin)){
-		 String dowtoinc = getdow(curdat);
-		 dunit garde = new dunit(666, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
+	 datepack monpack = new datepack();
+	 monpack.upto = tosql(dc1.getDate());
+	 monpack.goal = tosql(dc2.getDate());
+	 while(!monpack.upto.after(monpack.goal)){
+		 System.out.println(monpack.upto);
+		 String dowtoinc = getdow(monpack.upto);
 			if(hasint){
-				garde.medundefined = true;
-			garde = selecttoubib(hasint,repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,true,dowtoinc);
-			curg = garde.curg;
-			if(garde.medundefined){
+				monpack.garde.medundefined = true;
+			monpack = selecttoubib(monpack,hasint,repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,monpack.upto,true,dowtoinc);
+			curg = monpack.garde.curg;
+			if(monpack.garde.medundefined){
 				break;
 			}
-			dorecord(c,garde,true,hasint);
+			dorecord(monpack,c,true,hasint);
 			}
 			else{
 				prevurg = 666;
 			}
-			garde = null;
-		 garde = selecttoubib(hasint,repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,curdat,false,dowtoinc);
-		 if(garde.medundefined){
+		 monpack = selecttoubib(monpack,hasint,repos,curg,prevurg,prevint,true,newdowcount,curgarde,c,monpack.upto,false,dowtoinc);
+		 if(monpack.garde.medundefined){
 			 break;
 			}
-		 dorecord(c,garde,false,hasint);
-		prevurg = garde.curg;
+		 dorecord(monpack,c,false,hasint);
+		prevurg = monpack.garde.curg;
 		prevint = curg;
-		curdat = nextday(curdat);
+		System.out.println(monpack.upto);
+		monpack.upto = nextday(monpack.upto);
+		System.out.println(monpack.upto);
 	 }
+	 return monpack;
+ }
+ 
+ public static java.sql.Date tosql(Date curdat){
+	 Calendar cal = Calendar.getInstance();
+	 cal.setTime(curdat);
+	 return new java.sql.Date(cal.getTimeInMillis());
 	 
  }
  
- public static java.sql.Date nextday(Date curdat){
+ public static java.sql.Date nextday(java.sql.Date curdat){
 	 Calendar cal = Calendar.getInstance();
 	 cal.setTime(curdat);
 	 cal.add(Calendar.DATE, 1);
 	 return new java.sql.Date(cal.getTimeInMillis());
  }
  
- public static boolean dateferiee(Date curdat, Connection c) throws SQLException{
+ public static boolean dateferiee(java.sql.Date madate, Connection c) throws SQLException{
 	 Statement ms = c.createStatement();
-	 java.sql.Date madate = new java.sql.Date(curdat.getTime());
 	 ResultSet rs = ms.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE JOUR='"+madate+"'");
 	 while(rs.next()){
 		 return true;
@@ -245,11 +248,12 @@ while(rs2.next()){
 	 return false;
  }
  
- public static dunit selferie(boolean hasint,Connection c,Date curdat, dunit garde,String dowtoinc,boolean interieur) throws SQLException{
+ public static datepack selferie(datepack monpack,boolean hasint,Connection c, java.sql.Date curdat,String dowtoinc,boolean interieur) throws SQLException{
 	 Statement ms= c.createStatement();
 	 Statement ms2 = c.createStatement();
 	 ResultSet rs,rs2;
-	 dunit res = garde;
+	 datepack res = new datepack();
+	 res.garde = monpack.garde;
 	 if(!interieur){
 		 java.sql.Date madate = new java.sql.Date(curdat.getTime());
 		 if(hasint){
@@ -264,15 +268,17 @@ while(rs2.next()){
 		while(rs2.next()){
 			nbferie = rs2.getInt("NBFERIES");
 				 }
-			 res.nmed = rs.getInt("NUMERO");
-			 res.nbferies = nbferie;
-			 res.curgarde = rs.getInt("NBGARDES")+1;
-			 res.newdowcount = rs.getInt(dowtoinc)+1;
-			 res.medundefined = false;
-			 res.jour = new java.sql.Date(curdat.getTime());
-			 res.dowtoinc = dowtoinc;
-			 res.ferie = true;
-			 res.curg = rs.getInt("SERVICE");
+			 res.garde.nmed = rs.getInt("NUMERO");
+			 res.garde.nbferies = nbferie;
+			 res.garde.curgarde = rs.getInt("NBGARDES")+1;
+			 res.garde.newdowcount = rs.getInt(dowtoinc)+1;
+			 res.garde.medundefined = false;
+			 res.garde.jour = curdat;
+			 res.upto = curdat;
+			 res.garde.dowtoinc = dowtoinc;
+			 res.garde.ferie = true;
+			 res.garde.curg = rs.getInt("SERVICE");
+			 System.out.println("first return upto has "+res.upto);
 			 return res;
 		 }
 	 }
@@ -286,32 +292,38 @@ while(rs2.next()){
 			while(rs2.next()){
 				nbferie = rs2.getInt("NBFERIES");
 					 }
-		 res.nmed = rs.getInt("NUMERO");
-		 res.curgarde = rs.getInt("NBGARDES")+1;
-		 res.newdowcount = rs.getInt(dowtoinc)+1;
-		 res.medundefined = false;
-		 res.ferie = true;
-		 res.nbferies = nbferie;
-		 res.jour = new java.sql.Date(curdat.getTime());
-		 res.dowtoinc = dowtoinc;
-			 res.curg = rs.getInt("SERVICE");
+		 res.garde.nmed = rs.getInt("NUMERO");
+		 res.garde.curgarde = rs.getInt("NBGARDES")+1;
+		 res.garde.newdowcount = rs.getInt(dowtoinc)+1;
+		 res.garde.medundefined = false;
+		 res.upto = curdat;
+		 res.garde.ferie = true;
+		 res.garde.nbferies = nbferie;
+		 res.garde.jour = new java.sql.Date(curdat.getTime());
+		 res.garde.dowtoinc = dowtoinc;
+			 res.garde.curg = rs.getInt("SERVICE");
+			 System.out.println("second return upto has"+res.upto);
 			 return res;
 	 } 
  }
-	 res.medundefined = true;
+	 System.out.println("returning bad ferie");
+	 res.garde.medundefined = true;
 	 return res;
  }
 
- public static boolean isgtg(int curg,int prevint,int prevurg,Connection c,Date curdat, ResultSet rs,String dowtoinc,boolean interieur,int repos) throws SQLException, ParseException{
+ public static gtg isgtg(int curg,int prevint,int prevurg,Connection c,java.sql.Date curdat, ResultSet rs,String dowtoinc,boolean interieur,int repos) throws SQLException, ParseException{
 	 Statement ms2 = c.createStatement();
 	 Statement ms3 = c.createStatement();
 	 ResultSet rs2;
 	 ResultSet rs3;
+	 boolean bftest = true;
+	 gtg res = new gtg();
 	 boolean gtg =  true;
 	 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs2.next()){
 		 if(curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))){
-			 gtg = false;
+			 res.gtg = false;
+			 res.error = "pendant les vacances";
 			 break;
 		 }
 	 }
@@ -326,69 +338,114 @@ while(rs2.next()){
 		 if(daysbf < 0){
 			 daysbf = daysbf*(-1);
 		 }
-		 gtg = gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
-		 
+		 bftest = res.gtg;
+		 res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
+		 if(bftest && !res.gtg){
+			 res.error = "pas assez de temps de repos";
+		 }
 	 }
-	
-	 gtg = gtg && ((nbdays > repos)||(nbdays < 0));
+	bftest = res.gtg;
+	 res.gtg = res.gtg && ((nbdays > repos)||(nbdays < 0));
+	 if(bftest && !res.gtg){
+		 res.error = "pas assez de temps de repos";
+	 }
 	 if (rs.getInt("NBSEMESTRES") == 0){
 		
 		
 		if(interieur){
-			gtg = gtg && (rs.getInt("SERVICE")!=curg);
+			bftest  = res.gtg;
+			res.gtg = res.gtg && (rs.getInt("SERVICE")!=curg);
+			if(bftest && !res.gtg){
+				 res.error = "meme service que les urgences ce jour";
+			 }
 		}
 		
 	 }
 	 else if(rs.getInt("NBSEMESTRES")== 3 ||rs.getInt("NBSEMESTRES")== 4 ){
-		 gtg = gtg && (rs.getInt("NBGARDES") < 5) && (nbdays > repos);
+		 bftest = res.gtg;
+		 res.gtg = res.gtg && (rs.getInt("NBGARDES") < 5) && (nbdays > repos);
+		 if(bftest && !res.gtg){
+			 res.error = "plus de 5 gardes pour un semestre 3/4";
+		 }
 
 		 if(dowtoinc == "NBJEUDI"){
-			 gtg = gtg && (rs.getInt(dowtoinc) == 0);
+			 bftest = res.gtg;
+			 res.gtg = res.gtg && (rs.getInt(dowtoinc) == 0);
+			 if(bftest && !res.gtg){
+				 res.error = "semestre 3/4 ayant deja fait un jeudi";
+			 }
 			 
 		 }
 		 else if(dowtoinc == "NBVENDREDI"){
-		
-			 gtg = gtg && (rs.getInt(dowtoinc)==0);
-			 
+			 bftest = res.gtg;
+			 res.gtg = res.gtg && (rs.getInt(dowtoinc)==0);
+			 if(bftest && !res.gtg){
+				 res.error = "semestre 3/4 ayant deja fait un vendredi";
+			 }
 			 
 		 }
 		 else if (dowtoinc == "NBDIMANCHE"){
-			 gtg = gtg && (rs.getInt(dowtoinc) == 0) && (rs.getInt("NBFERIES") == 0);
-			 
+			 bftest = res.gtg;
+			 res.gtg = res.gtg && (rs.getInt(dowtoinc) == 0) && (rs.getInt("NBFERIES") == 0);
+			 if(bftest && !res.gtg){
+				 res.error = "semestre 3/4 ayant deja fait un dimanche ou un jour férié";
+			 }
 		 }
 		 else if(dateferiee(curdat,c)&&dowtoinc!="NBDIMANCHE"){
-			 gtg = gtg && (rs.getInt("NBDIMANCHE") == 0);
+			 bftest = res.gtg;
+			 res.gtg = res.gtg && (rs.getInt("NBDIMANCHE") == 0);
+			 if(bftest && !res.gtg){
+				 res.error = "semestre 3/4 ayant deja fait un dimanche : pas de férié";
+			 }
 			
 		 }
 		 if(interieur){
+			 bftest = res.gtg;
 			 gtg = gtg && rs.getInt("SERVICE") != curg;
+			 if(bftest && !res.gtg){
+				 res.error = "meme service que les urgences ce jour";
+			 }
 			 
 		 }
 	 }
 	 else if(rs.getInt("NBSEMESTRES") >= 5){
-		 gtg = gtg && rs.getInt("NBGARDES") < 3 && !dateferiee(curdat,c);
+		 bftest = res.gtg;
+		 res.gtg = res.gtg && rs.getInt("NBGARDES") < 3 && !dateferiee(curdat,c);
+		 if(bftest && !res.gtg){
+			 res.error = "plus de 3 gardes pour un 5+ semestre";
+		 }
 		 
 		 if((dowtoinc == "NBVENDREDI")||(dowtoinc == "NBSAMEDI")||(dowtoinc=="NBDIMANCHE")){
-			 gtg = false;
+			 bftest = res.gtg;
+			 res.gtg = false;
+			 if(bftest && !res.gtg){
+				 res.error = "pas de vendredi,samedi ou dimanche pour un 5+ semestre";
+			 }
 			 
 		 }
 		 if(interieur){
-			 gtg = gtg && rs.getInt("SERVICE") != curg;
+			 bftest = res.gtg;
+			 res.gtg = res.gtg && rs.getInt("SERVICE") != curg;
+			 if(bftest && !res.gtg){
+				 res.error = "meme service que les urgences ce jour";
+			 }
 			
 		 
 		 }
-		 gtg = gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
-		
+		 bftest = res.gtg;
+		 res.gtg = res.gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
+		 if(bftest && !res.gtg){
+			 res.error = "meme service que ceux de garde la veille";
+		 }
 	 }
 	
-	 return gtg;
+	 return res;
  }
  
- public static boolean isreserved(boolean hasint,boolean interieur,Connection c,Date curdat) throws SQLException{
+ public static boolean isreserved(boolean hasint,boolean interieur,Connection c,java.sql.Date madate) throws SQLException{
 	 boolean itis = false;
 	 Statement ms = c.createStatement();
 	 ResultSet rs2;
-	 java.sql.Date madate = new java.sql.Date(curdat.getTime());
 	 if(hasint){
 		 
 	 rs2 = ms.executeQuery("SELECT JF.NUMERO FROM (JOURS_FERIES AS JF INNER JOIN MEDECINS AS M ON M.NUMERO = JF.NUMERO) INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO AND JF.INTERIEUR = "+interieur+" WHERE JOUR = '"+madate+"' AND INTERIEUR = "+interieur);
@@ -404,21 +461,27 @@ while(rs2.next()){
  }
  
  
-public static dunit selecttoubib(boolean hasint,int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,Date curdat,boolean interieur,String dowtoinc) throws SQLException, ParseException{
+public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, int curg,int prevurg, int prevint,boolean medundefined,int newdowcount,int curgarde,Connection c,java.sql.Date curdat,boolean interieur,String dowtoinc) throws SQLException, ParseException{
 	 Statement ms2 = c.createStatement();
 	 Statement ms = c.createStatement();
 	 int nextint = 0;
+	 String terror = null;
 	 boolean ferie = false;
-	 dunit res = new dunit(curgarde, dowtoinc, dowtoinc, curgarde, curgarde, curgarde, curgarde, true);
+	 datepack res = new datepack();
+	 res.upto = monpack.upto;
+	 res.goal = monpack.goal;
+	 res.garde = monpack.garde;
 	 ResultSet rs,rs2;
 	 if(dateferiee(curdat,c)){
 		 if(isreserved(hasint,interieur,c,curdat)){
-		 res = selferie(hasint,c,curdat,res,dowtoinc,interieur);
-		 if(!res.medundefined){
+		 res = selferie(res,hasint,c,curdat,dowtoinc,interieur);
+		 if(!res.garde.medundefined){
 				 return res;
 		 }
+		
 		 }
 	 }
+	
 	 	if(dateferiee(nextday(curdat),c)){
 	 		if(isreserved(hasint,interieur,c,nextday(curdat))||isreserved(hasint,!interieur,c,nextday(curdat))){
 	 			rs = ms.executeQuery("SELECT SERVICE,JOUR FROM MEDECINS AS M INNER JOIN JOURS_FERIES AS JF ON M.NUMERO = JF.NUMERO");
@@ -433,7 +496,7 @@ public static dunit selecttoubib(boolean hasint,int repos, int curg,int prevurg,
 	 			}
 	 		}
 	 	}
-	 
+	 	 System.out.println("returned bad ferie");
 		 if(!interieur){
 			 if(hasint){
 			 rs=ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBSEMESTRES, NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> "+curg+" AND MEDECINS.SERVICE <> "+prevurg+" AND MEDECINS.SERVICE <> "+prevint+" AND MEDECINS.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
@@ -447,32 +510,38 @@ public static dunit selecttoubib(boolean hasint,int repos, int curg,int prevurg,
 			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBSEMESTRES, M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" AND M.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 			} 
 		 while(rs.next()){
-			 
+			 System.out.println("iterating");
 			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||((rs.getInt("SERVICE") == nextint))&& hasint){
 			 			 continue;
 			 		 }
-					 if(isgtg(curg,prevint,prevurg,c,curdat,rs,dowtoinc,interieur,repos)){
-
-						 res.ferie = ferie;
+			 		 gtg isgood = isgtg(curg,prevint,prevurg,c,curdat,rs,dowtoinc,interieur,repos);
+					 if(isgood.gtg){
+						 res.garde.ferie = dateferiee(curdat,c);
 						 if(ferie){
 							 int nbferie = 0;
 								rs2 = ms2.executeQuery("SELECT NBFERIES FROM MEDECINS WHERE NUMERO = "+rs.getInt("NUMERO"));
 								while(rs2.next()){
 									nbferie = rs2.getInt("NBFERIES");
 										 }
-							 res.nbferies = nbferie;
+							 res.garde.nbferies = nbferie;
 						 }
-						 res.dowtoinc = dowtoinc;
-						 res.jour = new java.sql.Date(curdat.getTime());
-						 res.curg = rs.getInt("SERVICE");
-						res.nmed = rs.getInt("NUMERO");
-						 res.curgarde = rs.getInt("NBGARDES")+1;
-						 res.newdowcount = rs.getInt(dowtoinc)+1;
-						res.medundefined = false;
+						 res.garde.dowtoinc = dowtoinc;
+						 res.garde.jour = new java.sql.Date(curdat.getTime());
+						 res.garde.curg = rs.getInt("SERVICE");
+						res.garde.nmed = rs.getInt("NUMERO");
+						 res.garde.curgarde = rs.getInt("NBGARDES")+1;
+						 res.garde.newdowcount = rs.getInt(dowtoinc)+1;
+						res.garde.medundefined = false;
+						res.upto = curdat;
+						System.out.println("returning new res with upto = "+res.upto);
 						return res;
 					 }
+					 else{
+						 terror = isgood.error;
+					 }
 				 }	 
-	res.medundefined = true;		 
+		 res.error = terror;
+	res.garde.medundefined = true;		 
 	 return res;
 		 }
 
@@ -499,31 +568,31 @@ public static dunit selecttoubib(boolean hasint,int repos, int curg,int prevurg,
  }
 
 
-public static void dorecord(Connection c, dunit garde,boolean interieur,boolean hasint) throws SQLException, ParseException{
+public static void dorecord(datepack monpack,Connection c,boolean interieur,boolean hasint) throws SQLException, ParseException{
 	Statement ms = c.createStatement();
-	java.sql.Date sqldate = garde.jour;
-	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '"+garde.jour+"' WHERE NUMERO = ".concat(Integer.toString(garde.nmed)));
-	 if(garde.ferie||dateferiee(garde.jour,c)){
-		 int newf = garde.nbferies + 1;
-		 rs = ms.executeUpdate("UPDATE MEDECINS SET NBFERIES = "+newf+" WHERE NUMERO = "+garde.nmed);
+	java.sql.Date sqldate = monpack.garde.jour;
+	 int rs = ms.executeUpdate("UPDATE MEDECINS set DERNIEREGARDE = '"+monpack.garde.jour+"' WHERE NUMERO = ".concat(Integer.toString(monpack.garde.nmed)));
+	 if(monpack.garde.ferie||dateferiee(monpack.garde.jour,c)){
+		 int newf = monpack.garde.nbferies + 1;
+		 rs = ms.executeUpdate("UPDATE MEDECINS SET NBFERIES = "+newf+" WHERE NUMERO = "+monpack.garde.nmed);
 	 }
-	 rs = ms.executeUpdate("update MEDECINS set ".concat(garde.dowtoinc).concat(" = ").concat(Integer.toString(garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(garde.nmed)));
-	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(garde.nmed)));
+	 rs = ms.executeUpdate("update MEDECINS set ".concat(monpack.garde.dowtoinc).concat(" = ").concat(Integer.toString(monpack.garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(monpack.garde.nmed)));
+	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(monpack.garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(monpack.garde.nmed)));
 	 if(hasint){
 	 if(!interieur){
-		 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
+		 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
 	 }
 	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,INTERIEUR) VALUES('"+sqldate+"',".concat(Integer.toString(garde.nmed)).concat(")"));
+		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,INTERIEUR) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
 	 }
 	 }
 	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(garde.nmed)).concat(")"));
+		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
 	 }
  }
 
-public static void writeoutput(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
-	writegardes(c,output,hasint);
+public static void writeoutput(datepack monpack,Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+	writegardes(monpack,c,output,hasint);
 	writestats(c,output,hasint);
 	writegps(c,output,hasint);
 	writecalendar(c,output,hasint);
@@ -564,7 +633,7 @@ public static void writegps(Connection c, WritableWorkbook output,boolean hasint
 	}
 }
 
-public static void writegardes(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+public static void writegardes(datepack monpack,Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
 	WritableSheet ms = output.createSheet("planning", 0);
 	Statement mst = c.createStatement();
 	ResultSet rs;
@@ -594,6 +663,12 @@ public static void writegardes(Connection c, WritableWorkbook output,boolean has
 		ms.addCell(l1);
 		ms.addCell(l2);
 		i++;
+	}
+	if(monpack.upto != monpack.goal){
+		l1 = new Label(0,i+1,"le tableau de garde n'a pas put être généré jusqu'au bout, voir erreur ci dessous");
+		l2 = new Label(0,i+2,monpack.error);
+		ms.addCell(l1);
+		ms.addCell(l2);
 	}
 }
 

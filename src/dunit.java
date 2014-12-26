@@ -1,10 +1,23 @@
+import java.sql.Date;
+
+
+
+
+
 
 
 
 public class dunit {
-    public dunit(int i, String string, String string2, int j, int k, int l,
-		int m, boolean b) {
-	
+    public dunit() {
+	this.nmed = 0;
+	this.jour = new Date((long)18);
+	this.dowtoinc = "whatever";
+	this.curg = 0;
+	this.curgarde = 0;
+	this.newdowcount = 0;
+	this.medundefined = true;
+	this.ferie = false;
+	this.nbferies = 0;
 }
 	int nmed;
     java.sql.Date jour;
