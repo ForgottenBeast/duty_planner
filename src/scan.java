@@ -11,7 +11,6 @@ import java.util.Date;
 import org.joda.time.*;
 import org.joda.time.DateTime;
 
-
 import jxl.*;
 import jxl.read.biff.BiffException;
 import jxl.write.*;
@@ -51,7 +50,7 @@ public class scan {
 		 datepack monpack = genplanning(c,data,hasint);
 		
 		 
-		 writeoutput(monpack,c,workbook,hasint);
+		 writeoutput(monpack,c,workbook,hasint,data);
 		
 	}
 	
@@ -94,6 +93,7 @@ public class scan {
 	 Calendar cal = Calendar.getInstance();
 	 java.sql.Date d1,d2;
 	 int rs;
+	 DateCell dc1,dc2;
 	 Sheet sheet;
 	 boolean mbool;
 	 ResultSet rs2;
@@ -113,8 +113,15 @@ public class scan {
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM SERVICES WHERE NOM = '".concat(sheet.getCell(2,i).getContents()).concat("'"));
 		while(rs2.next()){
 		nservice = rs2.getInt("NUMERO");
-		rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,NBSEMESTRES,SERVICE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(sheet.getCell(1,i).getContents()).concat(",").concat(Integer.toString(nservice)).concat(")"));
-
+		if(sheet.getCell(3,i).getCellFormat() != null){
+			dc1 = (DateCell) sheet.getCell(3,i);
+			cal.setTime(dc1.getDate());
+			d1 = new java.sql.Date(cal.getTimeInMillis());
+			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,NBSEMESTRES,SERVICE,DERNIEREGARDE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(sheet.getCell(1,i).getContents()).concat(",").concat(Integer.toString(nservice))+",'"+d1+"')");
+		}
+		else{
+			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,NBSEMESTRES,SERVICE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(sheet.getCell(1,i).getContents()).concat(",").concat(Integer.toString(nservice))+")");
+		}
 		}
 			}
 	
@@ -123,8 +130,8 @@ public class scan {
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '".concat(sheet.getCell(2,i).getContents()).concat("'"));
 while(rs2.next()){
 	int nmedecin = rs2.getInt("NUMERO");
-	DateCell dc1 = (DateCell) sheet.getCell(0,i);
-	DateCell dc2 = (DateCell) sheet.getCell(1,i);
+	dc1 = (DateCell) sheet.getCell(0,i);
+	dc2 = (DateCell) sheet.getCell(1,i);
 	
 	 
 	cal.setTime(dc1.getDate());
@@ -139,10 +146,12 @@ while(rs2.next()){
 	
 	sheet = data.getSheet(1);
 	for (int i = 1; i < sheet.getRows();i++){
+		if(sheet.getCell(0,i).getCellFormat() != null){
 		DateCell dc = (DateCell)sheet.getCell(0,i);
 		dc = (DateCell) sheet.getCell(0,i);
 		cal.setTime(dc.getDate());
 		d1 = new java.sql.Date(cal.getTimeInMillis());
+		
 		if(sheet.getCell(1,i).getCellFormat() != null){
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '".concat(sheet.getCell(1,i).getContents()).concat("'"));
 		while(rs2.next()){
@@ -178,6 +187,7 @@ while(rs2.next()){
 			}
 			}
 		}
+	}
  }
  
  public static datepack genplanning(Connection c, Workbook data,boolean hasint) throws ParseException, SQLException{
@@ -582,11 +592,12 @@ public static void dorecord(datepack monpack,Connection c,boolean interieur,bool
 	 }
  }
 
-public static void writeoutput(datepack monpack,Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+public static void writeoutput(datepack monpack,Connection c, WritableWorkbook output,boolean hasint,Workbook data) throws SQLException, RowsExceededException, WriteException, IOException{
 	writegardes(monpack,c,output,hasint);
 	writestats(c,output,hasint);
 	writegps(c,output,hasint);
 	writecalendar(c,output,hasint);
+	updatedata(c,data);
 	output.write();	
 	output.close();
 }
@@ -757,6 +768,27 @@ public static void writecalendar(Connection c, WritableWorkbook output,boolean h
 		}
 		i++;
 	}
+}
+
+public static void updatedata(Connection c, Workbook data) throws SQLException, IOException, RowsExceededException, WriteException{
+	Statement ms = c.createStatement();
+	ResultSet rs;
+	WritableWorkbook data2 = Workbook.createWorkbook(new File("data.xls"),data);
+	WritableSheet mst = data2.getSheet(0);
+	String nom;
+	Calendar cal = Calendar.getInstance();
+	WritableCellFormat cf1=new WritableCellFormat(DateFormats.FORMAT9);
+	for(int i = 1; i < mst.getRows();i++){
+		nom = mst.getCell(0,i).getContents();
+		rs = ms.executeQuery("SELECT DERNIEREGARDE FROM MEDECINS WHERE NOM = '"+nom+"'");
+		while(rs.next()){
+			cal.setTime(rs.getDate("DERNIEREGARDE"));
+			WritableCell dt = new jxl.write.DateTime(3,i,new Date(cal.getTimeInMillis()),cf1);
+			mst.addCell(dt);	
+		}
+	}
+	data2.write();
+	data2.close();
 }
 
 }
