@@ -104,16 +104,37 @@ L'auteur choisit donc une autre possibilité : l'utilisation d'openoffice Base, 
 \item Capacité à créer une feuille excel à partir d'une table d'un simple clic.
 \end{itemize}
 \subsection{Base de Données Relationelles}
+Dès les premières discussions avec les utilisateurs potentiels la situation a immédiatement fait penser l'auteur à un certain nombre de cours dispensés par le Professeur Antoine Bergey enseignant de Bases de Données 1 pour les L2 MI de l'université de poitiers.
+Une base de données relationelles et les fonctionalités offertes par le DBMS sous jacent ont permis la rédaction de la version finale du programme dans un temps extrèmement court comparé à celui qu'aurait prit la rédaction de toute une section du programme sous forme d'un script en awk, sans parler du temps d'exécution qui aurait exploser avec autant d'interactions avec le disque dur.
 \subsubsection{HSQLDB}
+Lors de la première phase du projet (l'implémentation en OOBasic) l'auteur dut s'interesser au format de fichier utilisé par openoffice Base, Le dbms HSQLDB ayant un certain nombre de déviations du langage sql standard l'auteur dut se référer au manuel\cite{manhsqldb} afin de rédiger les requêtes utilisées par sa macro puis celles utilisées par l'executable jar.
+
 \subsection{Java}
+Après la mise en service de la première version de duty planner l'auteur eut plusieurs retour positifs des utilisateurs, notament sur la vente possible de duty planner. 
+Dans les retours négatifs, outre la facilité d'utilisation (ou plutôt son absence, beaucoup ignorant ce qu'était openoffice base ou une macro) la question de la portabilité s'est manifestée. 
+Malgré le choix d'un logiciel très utilisé la version mac d'un testeur se heurtait à un certain nombre de problèmes avec la macro.
+Ces raisons ont mené l'auteur à prendre la décision de réécrire intégralement duty planner en java, afin de rendre le programme plus rapide, auto contenu et plus simple d'utilisation.
 \section{Design de L'algorithme}
-\subsection{Description}
-\subsubsection{Préparation}
-\subsubsection{Décomposition}
-\subsubsection{Itération}
+Afin de remplir les cahiers des charges définis dans le chapitre précedent l'auteur mis au point un algorithme permettant de générer un tableau de garde à partir d'un certain nombre d'informations (noms de médecins, ancienneté, date de leur dernière garde et période sur laquelle générer le tableau).
+Tout d'abord les noms sont entrés dans une table de la base de données, ainsi que d'autres informations, mise à leurs valeurs par défaut avant la génération du  tableau de garde comme par exemple le nombre de gardes déja attribuées, le nombre de gardes de chaque jour de la semaine, etc...
+
+
+Ensuite une nouvelle table est crée qui recevra les résultats de l'algorithme, celle ci ayant un nombre d'attributs dépendant du type de tableau de garde que l'utilisateur désire générer (cad pour un seul service ou tout un hopital).
+
+Puis le programme itère à travers les jours de la période définie, créant un classement pour chaque jour des médecins éligibles pour cette garde là en les classant en fonction du nombre de gardes déja attribuées, du nombre de gardes tombant ce jour là de la semaine, de la date de la dernière garde, etc...
+
 \section{Implementation}
 \subsection{OpenOffice}
+	Lors de la première phase d'implémentation l'auteur a utilisé openoffice base et une macro écrite en openoffice basic pour communiquer avec la base de donnée hsqldb contenue dans le fichier .odb (qui n'est qu'un zip contenant les tables et les fichiers utilisés par hsqldb).
+ L'entrée de données se faisait via un certain nombre de formulaires à remplir. 
+Puis la macro était appelée via le menu idoine de l'interface graphique.
+Cette démarche  seule prouva être une ordalie pour certains utilisateurs, de plus la possible commercialisation d'une macro (donc lisible en clair via le menu) était un autre problème.
+Sans émettre de jugement de valeur, la phase la plus longue fut l'apprentissage syntaxique de ce dialecte du BASIC.
+Ce ne fut cependant pas la phase la plus difficile. L'utilisation de ce langage fut une expérience pleine d'enseignement et assez éprouvante.
+
 \subsection{Java}
+
+Après avoir fait face aux problèmes cités plus haut concernant l'implémentation comme macro openoffice l'auteur pris la décision de ré implémenter l'algorithme en Java, langage donnant l'avantage de la portabilité, apportant une simplification à l'interaction avec les utilisateurs et augmentant drastiquement la vitesse d'exécution (la base de données ne résidant plus que dans la mémoire ram de l'ordinateur). Comme pour OO BASIC la phase la plus longue fut l'apprentissage du langage en lui même. L'auteur étant déja familier avec le paradigme orienté objet\cite{ooparadigm} les concepts n'étaient pas nouveaux.
 
 \chapter{Appendice}
 \section{Améliorations à apporter}
