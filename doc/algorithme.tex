@@ -1,0 +1,83 @@
+\documentclass[11pt]{report}
+
+\usepackage{fullpage}
+\usepackage{titlesec}
+\usepackage[utf8]{inputenc}  
+\usepackage[T1]{fontenc}  
+\usepackage[francais]{babel}
+\usepackage{minted}
+\begin{document}
+\title{Algorithme Duty Planner}
+
+\author{Quentin Mallet}
+
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+Ce pdf documente l'algorithme utilisé par le programme duty planner.
+Ce programme initialement écrit en OO basic comme macro pour openoffice base a ensuite été réécrit et modifié du point de vue de son architecture pour fonctionner sous la forme d'un jar executable ne requérant que l'installation préalable du "java runtime environment". 
+Comme lors de la réalisation de ce projet l'auteur n'avais pas encore compris l'importance de documenter correctement toutes les étapes de la réalisation la seule ressource chronologique utilisée pour la réalisation de ce document est le resultat de "git log" sur les dépots de code de l'auteur.
+
+\chapter{Appendice}
+\section{indent.awk}
+Lors de la première implémentation de l'algorithme décrit plus avant, l'auteur s'est rapidement heurté à un problème d'indentation et de lisibilité du code. La quantité de code étant devenue trop grande et illisible pour une édition manuel il a mis au point et utilisé le script en awk qui suit
+\begin{minted}[linenos,
+               numbersep=5pt,
+               gobble=2,
+               frame=lines,
+               framesep=2mm]{awk}
+N { FS=" " 
+level = 0
+attendu[level] = "none"}
+
+function indent(level){
+for (i=(NF+level);i>level;i--){
+                        $i = $(i-level)
+                }
+                for(i = 1; i<= level; i++){
+                        $i = "  "
+                }
+
+}
+
+
+/[Ww]hile/{
+	indent(level)
+	print $0
+	level += 1
+	attendu[level] = "wend"
+	next
+}
+
+/^[Ii]f/{
+	indent(level)
+	print $0
+	level += 1
+	attendu[level] = "end"
+	next
+}
+
+/^else/{
+	indent(level-1)
+	print $0
+	next}
+
+{if (level > 0 ) {
+	if($1 ~ attendu[level]){
+		level -= 1
+		indent(level)
+		print $0
+		next
+	}
+}
+}
+
+{
+	indent(level)
+	print $0
+}
+\end{minted}
+\end{document}
