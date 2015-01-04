@@ -22,7 +22,7 @@
 
 \section{Introduction}
 Ce pdf documente l'algorithme utilisé par le programme duty planner.
-Ce programme initialement écrit en OO basic\cite{basicguide} comme macro pour openoffice base a ensuite été réécrit et modifié du point de vue de son architecture pour fonctionner sous la forme d'un jar exécutable ne requérant que l'installation préalable du "java runtime environment". 
+Ce programme initialement écrit en OO basic\cite{basicguide} comme macro pour openoffice base\cite{base} a ensuite été réécrit et modifié du point de vue de son architecture pour fonctionner sous la forme d'un jar exécutable ne requérant que l'installation préalable du "java runtime environment". 
 Comme lors de la réalisation de ce projet l'auteur n'avais pas encore compris l'importance de documenter correctement toutes les étapes de la réalisation la seule ressource chronologique utilisée pour la réalisation de ce document est le résultat de "git log" sur les dépôts de code de l'auteur.
 
 \chapter{Cahier Des Charges}
@@ -82,21 +82,47 @@ De ces contraintes naissent des contraintes d'intégrité évidentes (impossibil
 Un autre problème a été de conserver la compatibilité entre les deux première version, c'est à dire la capacité à générer aussi bien un tableau de garde pour un seul service sur une courte durée que pour tout un hôpital sur une durée plus longue.
 
 \chapter{Duty Planner}
+\section{Préambule}
+	Afin de répondre aux besoins définis dans le chapitre précédent l'implémentation de l'algorithme duty planner a été progressive et a mené à plusieurs changements de direction au cours du temps (changement du cahier des charges, résolutions de qui pro quos quant à la signifaction de certains termes employés par les utilisateurs, etc)...
+
 \section{outils utilisés}
+Avant de donner les détails de l'algorithme l'auteur va exposer dans les sections suivantes les outils utilisés au cours de ce projet ainsi que les raisons qui l'ont mené à les choisir.
 \subsection{OpenOffice}
-\subsection{HSQLDB}
+	Les utilisateurs avec qui l'auteur été en contact ont spécifié dès le début que le tableau de garde résultant devrait être présenté dans un format compatible avec microsoft excel. 
+Etant utilisateurs d'openoffice\cite{openoffice} le résultat de leur travail n'avait jamais posé de problème de lecture à la section administrative chargée de la validation du tableau de garde (elle utilisatrice de produits microsoft).
+L'auteur utilisant libreoffice\cite{libreoffice} pour certaines tâches la première possibilité explorée fut d'écrire une macro pour openoffice calc.
+Rapidement un certain nombre de problèmes firent leur apparition : 
+\begin{itemize}
+\item Les macros fonctionnant sous openoffice ne fonctionneront pas nécessairement sous microsoft excel
+\item Si la portabilité d'une macro est intéressante, l'implémentation d'un DBMS\cite{DBMS} dans une macro est inutilement compliquée\cite{wheel}.
+\end{itemize}
+
+L'auteur choisit donc une autre possibilité : l'utilisation d'openoffice Base, ce programme apportait en effet un certain nombre d'avantages : 
+\begin{itemize}
+\item Interface graphique agréable à l'oeil pour les utilisateurs
+\item Utilisation de formulaires pré enregistrés afin de remplir la base de données
+\item Capacité à créer une feuille excel à partir d'une table d'un simple clic.
+\end{itemize}
+\subsection{Base de Données Relationelles}
+\subsubsection{HSQLDB}
 \subsection{Java}
-\section{Description de L'algorithme}
-\subsection{Préparation}
-\subsection{Décomposition}
-\subsection{Itération}
+\section{Design de L'algorithme}
+\subsection{Description}
+\subsubsection{Préparation}
+\subsubsection{Décomposition}
+\subsubsection{Itération}
+\section{Implementation}
+\subsection{OpenOffice}
+\subsection{Java}
 
 \chapter{Appendice}
 \section{Améliorations à apporter}
-Plusieurs améliorations pourront être apportées à duty planner par la suite, parmi elles la possibilité de changer la manière dont l'ancienneté (qui si on n'y réfléchit n'est qu'un score) modifie le nombre de gardes attribuées, la possibilité de marquer certains jours comme récurrents chaque mois (demander à être de garde le deuxième mardi de chaque mois) ou chaque année ("réserver" les noëls sur plusieurs années). Ces possibilités ne sont pas spécialement difficiles à implémenter mais elles semblaient hors du scope du projet. En effet les personnes générant les gardes le font sur des périodes de au maximum six mois et la rédaction puis la maintenance d'une masse de code supplémentaire semblait inutile\cite{yagn}.
+Plusieurs améliorations pourront être apportées à duty planner par la suite, parmi elles la possibilité de changer la manière dont l'ancienneté (qui si on n'y réfléchit n'est qu'un score) modifie le nombre de gardes attribuées, la possibilité de marquer certains jours comme récurrents chaque mois (demander à être de garde le deuxième mardi de chaque mois) ou chaque année ("réserver" les noëls sur plusieurs années).
+ Ces possibilités ne sont pas spécialement difficiles à implémenter mais elles semblaient hors du scope du projet. 
+En effet les personnes générant les gardes le font sur des périodes de au maximum six mois et la rédaction puis la maintenance d'une masse de code supplémentaire semblaient inutile\cite{yagn}.
 
 \section{indent.awk}
-Lors de la première implémentation de l'algorithme décrit plus avant, l'auteur s'est rapidement heurté à un problème d'indentation et de lisibilité du code. La quantité de code étant devenue trop grande et illisible pour une édition manuel il a mis au point et utilisé le script en awk qui suit
+Lors de la première implémentation de l'algorithme décrit plus avant, l'auteur s'est rapidement heurté à un problème d'indentation et de lisibilité du code. La quantité de code étant devenue trop grande et illisible pour une édition manuel il a mis au point et utilisé le script en awk\cite{awk} qui suit
 \begin{minted}[linenos,
                numbersep=5pt,
                gobble=2,
@@ -154,5 +180,9 @@ Lors de la première implémentation de l'algorithme décrit plus avant, l'auteu
 		print $0
 	 }
 \end{minted}
+\section{Rédaction de ce Document}
+La rédaction de ce document a été faite en utilisant Latex\cite{latex}, bibtex\cite{bibtex} ainsi que les packages biblatex\cite{biblatex} et minted\cite{minted} (pour la mise en forme du code).
+Minted utilise la bibliothèque python Pygments\cite{Pygments}. La rédaction en elle même a été effectuée à l'aide de l'éditeur de texte vim-nox\cite{vimnox}, la bibliographie constituée avec zotero\cite{zotero} en conjonction avec le navigateur web iceweasel\cite{iceweasel}. Le système d'exploitation supportant ce stack est Debian wheezy\cite{debian}.
+
 \printbibliography
 \end{document}
