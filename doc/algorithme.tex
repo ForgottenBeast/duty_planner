@@ -18,6 +18,8 @@
 
 \tableofcontents
 
+\newpage
+
 \section{Introduction}
 Ce pdf documente l'algorithme utilisé par le programme duty planner.
 Ce programme initialement écrit en OO basic\cite{basicguide} comme macro pour openoffice base a ensuite été réécrit et modifié du point de vue de son architecture pour fonctionner sous la forme d'un jar exécutable ne requérant que l'installation préalable du "java runtime environment". 
@@ -59,6 +61,7 @@ Voici le cahier des charges final auquel il est arrivé.
 \item Chaque médecin doit avoir approximativement le même nombre de chaque jour de la semaine
 \item Chaque médecin doit pouvoir marquer une période comme "vacances" et ne pas se voir assigner de garde durant cette période
 \item Une date spécifique (eg jour férié) doit pouvoir être attribuée en avance à un médecin et le planning de garde généré de telle manière à lui permettre d'effectuer cette garde sans briser les règles précédentes
+\item Le tableau de garde résultant doit pouvoir être envoyé au bureau des affaires médicales de l'hopital au format xls ou un format tableur compatible sans modifications avec la suite bureautique microsoft.
 \end{itemize}
 
 \section{Deuxième Version}
@@ -78,9 +81,20 @@ Par la suite nous nous référerons à ce médecin comme le médecin d'intérieu
 De ces contraintes naissent des contraintes d'intégrité évidentes (impossibilité de demander à être de garde d'intérieur à une date spécifique si on ne provient pas d'un service pouvant fournir des médecins d'intérieur, etc...).
 Un autre problème a été de conserver la compatibilité entre les deux première version, c'est à dire la capacité à générer aussi bien un tableau de garde pour un seul service sur une courte durée que pour tout un hôpital sur une durée plus longue.
 
+\chapter{Duty Planner}
+\section{outils utilisés}
+\subsection{OpenOffice}
+\subsection{HSQLDB}
+\subsection{Java}
+\section{Description de L'algorithme}
+\subsection{Préparation}
+\subsection{Décomposition}
+\subsection{Itération}
+
 \chapter{Appendice}
 \section{Améliorations à apporter}
 Plusieurs améliorations pourront être apportées à duty planner par la suite, parmi elles la possibilité de changer la manière dont l'ancienneté (qui si on n'y réfléchit n'est qu'un score) modifie le nombre de gardes attribuées, la possibilité de marquer certains jours comme récurrents chaque mois (demander à être de garde le deuxième mardi de chaque mois) ou chaque année ("réserver" les noëls sur plusieurs années). Ces possibilités ne sont pas spécialement difficiles à implémenter mais elles semblaient hors du scope du projet. En effet les personnes générant les gardes le font sur des périodes de au maximum six mois et la rédaction puis la maintenance d'une masse de code supplémentaire semblait inutile\cite{yagn}.
+
 \section{indent.awk}
 Lors de la première implémentation de l'algorithme décrit plus avant, l'auteur s'est rapidement heurté à un problème d'indentation et de lisibilité du code. La quantité de code étant devenue trop grande et illisible pour une édition manuel il a mis au point et utilisé le script en awk qui suit
 \begin{minted}[linenos,
@@ -140,4 +154,5 @@ Lors de la première implémentation de l'algorithme décrit plus avant, l'auteu
 		print $0
 	 }
 \end{minted}
+\printbibliography
 \end{document}
