@@ -41,43 +41,43 @@ for (i=(NF+level);i>level;i--){
                         $i = "  "
                 }
 
-}
+ }
 
 
-/[Ww]hile/{
+ /[Ww]hile/{
 	indent(level)
 	print $0
 	level += 1
 	attendu[level] = "wend"
 	next
-}
+ }
 
-/^[Ii]f/{
+ /^[Ii]f/{
 	indent(level)
 	print $0
 	level += 1
 	attendu[level] = "end"
 	next
-}
+ }
 
-/^else/{
+ /^else/{
 	indent(level-1)
 	print $0
 	next}
 
-{if (level > 0 ) {
+ {if (level > 0 ) {
 	if($1 ~ attendu[level]){
 		level -= 1
 		indent(level)
 		print $0
 		next
 	}
-}
-}
+ }
+ }
 
-{
+ {
 	indent(level)
 	print $0
-}
+ }
 \end{minted}
 \end{document}
