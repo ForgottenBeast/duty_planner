@@ -5,6 +5,7 @@
 \usepackage{biblatex}
 \addbibresource{biblio.bib}
 \usepackage[utf8]{inputenc}  
+\usepackage{csquotes}
 \usepackage[T1]{fontenc}  
 \usepackage[francais]{babel}
 \usepackage{minted}
@@ -149,57 +150,56 @@ Lors de la première implémentation de l'algorithme décrit plus avant, l'auteu
                gobble=2,
                frame=lines,
                framesep=2mm]{awk}
-
-	N { FS=" " 
-	level = 0
-	attendu[level] = "none"}
-
-	function indent(level){
-	for (i=(NF+level);i>level;i--){
-				$i = $(i-level)
-			}
-			for(i = 1; i<= level; i++){
-				$i = "  "
-			}
-
-	 }
-
-
-	 /[Ww]hile/{
-		indent(level)
-		print $0
-		level += 1
-		attendu[level] = "wend"
-		next
-	 }
-
-	 /^[Ii]f/{
-		indent(level)
-		print $0
-		level += 1
-		attendu[level] = "end"
-		next
-	 }
-
-	 /^else/{
-		indent(level-1)
-		print $0
-		next}
-
-	 {if (level > 0 ) {
-		if($1 ~ attendu[level]){
-			level -= 1
-			indent(level)
-			print $0
-			next
-		}
-	 }
-	 }
-
-	 {
-		indent(level)
-		print $0
-	 }
+  N { FS=" " 
+  level = 0
+  attendu[level] = "none"}
+  
+  function indent(level){
+  for (i=(NF+level);i>level;i--){
+     $i = $(i-level)
+    }
+    for(i = 1; i<= level; i++){
+     $i = "  "
+    }
+  
+  }
+  
+  
+  /[Ww]hile/{
+   indent(level)
+   print $0
+   level += 1
+   attendu[level] = "wend"
+   next
+  }
+  
+  /^[Ii]f/{
+   indent(level)
+   print $0
+   level += 1
+   attendu[level] = "end"
+   next
+  }
+  
+  /^else/{
+   indent(level-1)
+   print $0
+   next}
+  
+  {if (level > 0 ) {
+   if($1 ~ attendu[level]){
+    level -= 1
+    indent(level)
+    print $0
+    next
+   }
+  }
+   }
+  
+   {
+  	indent(level)
+  	print $0
+   }
 \end{minted}
 \section{Rédaction de ce Document}
 La rédaction de ce document a été faite en utilisant Latex\cite{latex}, bibtex\cite{bibtex} ainsi que les packages biblatex\cite{biblatex} et minted\cite{minted} (pour la mise en forme du code).
