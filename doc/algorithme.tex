@@ -23,13 +23,13 @@
 
 \section{Introduction}
 Ce pdf documente l'algorithme utilisé par le programme duty planner.
-Ce programme initialement écrit en OO basic\cite{basicguide} comme macro pour openoffice base\cite{base} a ensuite été réécrit et modifié du point de vue de son architecture pour fonctionner sous la forme d'un jar exécutable ne requérant que l'installation préalable du "java runtime environment". 
+Ce programme initialement écrit en OO basic\cite{basicguide} comme macro pour openoffice base\footnote{http://www.openoffice.org/product/base.html} a ensuite été réécrit et modifié du point de vue de son architecture pour fonctionner sous la forme d'un jar exécutable ne requérant que l'installation préalable du "java runtime environment". 
 Comme lors de la réalisation de ce projet l'auteur n'avais pas encore compris l'importance de documenter correctement toutes les étapes de la réalisation la seule ressource chronologique utilisée pour la réalisation de ce document est le résultat de "git log" sur les dépôts de code de l'auteur.
 
 \chapter{Cahier Des Charges}
 \section{Préambule}
-La réalisation d'un cahier des charges complet et cohérent a été un premier challenge, en effet lors de cette étape essentielle du projet l'auteur n'avait pas encore conscience de l'existence de SEA\cite{sea} aussi ce processus a demandé un grand nombre de tatonnements et des communications répétées avec les utilisateurs. 
-A posteriori un shéma entité association a été élaboré pour vérifier la validité du design de la base de donné.
+La réalisation d'un cahier des charges complet et cohérent a été un premier challenge, en effet lors de cette étape essentielle du projet l'auteur n'avait pas encore conscience de l'existence de SEA aussi ce processus a demandé un grand nombre de tâtonnements et des communications répétées avec les utilisateurs. 
+A posteriori un schéma entité association a été élaboré pour vérifier la validité du design de la base de donné.
 
 Plusieurs versions de l'algorithme ont existé, les sections suivantes décrivent le processus de création du cahier des charges et ses modifications entre chaque version. 
 Il est important de noter que les numéros de version donnés par la suite ne correspondent à aucun tag dans les dépôts git et ne servent que comme points de repère au sein de ce document.
@@ -62,16 +62,16 @@ Voici le cahier des charges final auquel il est arrivé.
 \item Chaque médecin doit avoir approximativement le même nombre de chaque jour de la semaine
 \item Chaque médecin doit pouvoir marquer une période comme "vacances" et ne pas se voir assigner de garde durant cette période
 \item Une date spécifique (eg jour férié) doit pouvoir être attribuée en avance à un médecin et le planning de garde généré de telle manière à lui permettre d'effectuer cette garde sans briser les règles précédentes
-\item Le tableau de garde résultant doit pouvoir être envoyé au bureau des affaires médicales de l'hopital au format xls ou un format tableur compatible sans modifications avec la suite bureautique microsoft.
+\item Le tableau de garde résultant doit pouvoir être envoyé au bureau des affaires médicales de l'hôpital au format xls ou un format tableur compatible sans modifications avec la suite bureautique microsoft.
 \end{itemize}
 
 \section{Deuxième Version}
 Après une phase extensive de tests un utilisateur potentiel a contacté l'auteur et lui a fait part de son intérêt pour le projet en cours.
-L'utilisateur en question étant en charge de la rédaction du tableau de garde pour tout l'hopital l'algorithme correspondant au cahier des charges précédent ne lui était d'aucune utilité mais l'idée étant là une nouvelle itération eut lieu en collaboration avec lui afin de compléter l'algorithme pour le faire correspondre au nouveau cahier des charges.
+L'utilisateur en question étant en charge de la rédaction du tableau de garde pour tout l'hôpital l'algorithme correspondant au cahier des charges précédent ne lui était d'aucune utilité mais l'idée étant là une nouvelle itération eut lieu en collaboration avec lui afin de compléter l'algorithme pour le faire correspondre au nouveau cahier des charges.
 \subsection{Cahier des Charges}
 Le cahier des charges est essentiellement le même que celui de la première version mais avec l'ajout des contraintes qui suivent : 
 \begin{itemize}
-\item A chaque date deux médecins doivent être de garde : un médecin de garde aux urgences et un autre se déplaçant dans l'hopital pour aller là où son aide est requise.
+\item A chaque date deux médecins doivent être de garde : un médecin de garde aux urgences et un autre se déplaçant dans l'hôpital pour aller là où son aide est requise.
 Par la suite nous nous référerons à ce médecin comme le médecin d'intérieur.
 \item tous les services ne peuvent pas fournir de médecins d'intérieur, mais tous peuvent fournir des médecins pour les urgences
 \item le nombre de gardes de chaque médecin dépend de son ancienneté : les plus anciens n'en ont que trois sur la période définie, ceux en dessous cinq et les plus jeunes ont toutes les autres
@@ -84,31 +84,31 @@ Un autre problème a été de conserver la compatibilité entre les deux premiè
 
 \chapter{Duty Planner}
 \section{Préambule}
-	Afin de répondre aux besoins définis dans le chapitre précédent l'implémentation de l'algorithme duty planner a été progressive et a mené à plusieurs changements de direction au cours du temps (changement du cahier des charges, résolutions de qui pro quos quant à la signifaction de certains termes employés par les utilisateurs, etc)...
+	Afin de répondre aux besoins définis dans le chapitre précédent l'implémentation de l'algorithme duty planner a été progressive et a mené à plusieurs changements de direction au cours du temps (changement du cahier des charges, résolutions de qui pro quos quant à la signification de certains termes employés par les utilisateurs, etc)...
 
 \section{outils utilisés}
 Avant de donner les détails de l'algorithme l'auteur va exposer dans les sections suivantes les outils utilisés au cours de ce projet ainsi que les raisons qui l'ont mené à les choisir.
 \subsection{OpenOffice}
 	Les utilisateurs avec qui l'auteur été en contact ont spécifié dès le début que le tableau de garde résultant devrait être présenté dans un format compatible avec microsoft excel. 
-Etant utilisateurs d'openoffice\cite{openoffice} le résultat de leur travail n'avait jamais posé de problème de lecture à la section administrative chargée de la validation du tableau de garde (elle utilisatrice de produits microsoft).
-L'auteur utilisant libreoffice\cite{libreoffice} pour certaines tâches la première possibilité explorée fut d'écrire une macro pour openoffice calc.
+Étant utilisateurs d'openoffice\footnote{https://www.openoffice.org/fr/} le résultat de leur travail n'avait jamais posé de problème de lecture à la section administrative chargée de la validation du tableau de garde (elle utilisatrice de produits microsoft).
+L'auteur utilisant libreoffice\footnote{http://en.wikipedia.org/wiki/LibreOffice} pour certaines tâches la première possibilité explorée fut d'écrire une macro pour openoffice calc.
 Rapidement un certain nombre de problèmes firent leur apparition : 
 \begin{itemize}
 \item Les macros fonctionnant sous openoffice ne fonctionneront pas nécessairement sous microsoft excel
-\item Si la portabilité d'une macro est intéressante, l'implémentation d'un DBMS\cite{DBMS} dans une macro est inutilement compliquée\cite{wheel}.
+\item Si la portabilité d'une macro est intéressante, l'implémentation d'un DBMS dans une macro est inutilement compliquée\cite{wheel}.
 \end{itemize}
 
 L'auteur choisit donc une autre possibilité : l'utilisation d'openoffice Base, ce programme apportait en effet un certain nombre d'avantages : 
 \begin{itemize}
-\item Interface graphique agréable à l'oeil pour les utilisateurs
+\item Interface graphique agréable à l'œil pour les utilisateurs
 \item Utilisation de formulaires pré enregistrés afin de remplir la base de données
 \item Capacité à créer une feuille excel à partir d'une table d'un simple clic.
 \end{itemize}
 \subsection{Base de Données Relationelles}
-Dès les premières discussions avec les utilisateurs potentiels la situation a immédiatement fait penser l'auteur à un certain nombre de cours dispensés par le Professeur Antoine Bergey enseignant de Bases de Données 1 pour les L2 MI de l'université de poitiers.
-Une base de données relationelles et les fonctionalités offertes par le DBMS sous jacent ont permis la rédaction de la version finale du programme dans un temps extrèmement court comparé à celui qu'aurait prit la rédaction de toute une section du programme sous forme d'un script en awk, sans parler du temps d'exécution qui aurait exploser avec autant d'interactions avec le disque dur.
+Dès les premières discussions avec les utilisateurs potentiels la situation a immédiatement fait penser l'auteur à un certain nombre de cours dispensés par le Professeur Antoine Bergey enseignant de Bases de Données 1 pour les L2 MI de l'université de Poitiers.
+Une base de données relationnelles et les fonctionnalités offertes par le DBMS sous jacent ont permis la rédaction de la version finale du programme dans un temps extrêmement court comparé à celui qu'aurait prit la rédaction de toute une section du programme sous forme d'un script en awk, sans parler du temps d'exécution qui aurait exploser avec autant d'interactions avec le disque dur.
 \subsubsection{HSQLDB}
-Lors de la première phase du projet (l'implémentation en OOBasic) l'auteur dut s'interesser au format de fichier utilisé par openoffice Base, Le dbms HSQLDB ayant un certain nombre de déviations du langage sql standard l'auteur dut se référer au manuel\cite{manhsqldb} afin de rédiger les requêtes utilisées par sa macro puis celles utilisées par l'executable jar.
+Lors de la première phase du projet (l'implémentation en OOBasic) l'auteur dut s'intéresser au format de fichier utilisé par openoffice Base, Le dbms HSQLDB ayant un certain nombre de déviations du langage sql standard l'auteur dut se référer au manuel\cite{manhsqldb} afin de rédiger les requêtes utilisées par sa macro puis celles utilisées par l'exécutable jar.
 
 \subsection{Java}
 Après la mise en service de la première version de duty planner l'auteur eut plusieurs retour positifs des utilisateurs, notament sur la vente possible de duty planner. 
@@ -116,15 +116,15 @@ Dans les retours négatifs, outre la facilité d'utilisation (ou plutôt son abs
 Malgré le choix d'un logiciel très utilisé la version mac d'un testeur se heurtait à un certain nombre de problèmes avec la macro.
 Ces raisons ont mené l'auteur à prendre la décision de réécrire intégralement duty planner en java, afin de rendre le programme plus rapide, auto contenu et plus simple d'utilisation.
 \section{Design de L'algorithme}
-Afin de remplir les cahiers des charges définis dans le chapitre précedent l'auteur mis au point un algorithme permettant de générer un tableau de garde à partir d'un certain nombre d'informations (noms de médecins, ancienneté, date de leur dernière garde et période sur laquelle générer le tableau).
-Tout d'abord les noms sont entrés dans une table de la base de données, ainsi que d'autres informations, mise à leurs valeurs par défaut avant la génération du  tableau de garde comme par exemple le nombre de gardes déja attribuées, le nombre de gardes de chaque jour de la semaine, etc...
+Afin de remplir les cahiers des charges définis dans le chapitre précédent l'auteur mis au point un algorithme permettant de générer un tableau de garde à partir d'un certain nombre d'informations (noms de médecins, ancienneté, date de leur dernière garde et période sur laquelle générer le tableau).
+Tout d'abord les noms sont entrés dans une table de la base de données, ainsi que d'autres informations, mise à leurs valeurs par défaut avant la génération du  tableau de garde comme par exemple le nombre de gardes déjà attribuées, le nombre de gardes de chaque jour de la semaine, etc...
 
 
-Ensuite une nouvelle table est crée qui recevra les résultats de l'algorithme, celle ci ayant un nombre d'attributs dépendant du type de tableau de garde que l'utilisateur désire générer (cad pour un seul service ou tout un hopital).
+Ensuite une nouvelle table est crée qui recevra les résultats de l'algorithme, celle ci ayant un nombre d'attributs dépendant du type de tableau de garde que l'utilisateur désire générer (cad pour un seul service ou tout un hôpital).
 
-Puis le programme itère à travers les jours de la période définie, créant un classement pour chaque jour des médecins éligibles pour cette garde là en les classant en fonction du nombre de gardes déja attribuées, du nombre de gardes tombant ce jour là de la semaine, de la date de la dernière garde, etc...
+Puis le programme itère à travers les jours de la période définie, créant un classement pour chaque jour des médecins éligibles pour cette garde là en les classant en fonction du nombre de gardes déjà attribuées, du nombre de gardes tombant ce jour là de la semaine, de la date de la dernière garde, etc...
 
-\section{Implementation}
+\section{Implémentation}
 \subsection{OpenOffice}
 	Lors de la première phase d'implémentation l'auteur a utilisé openoffice base et une macro écrite en openoffice basic pour communiquer avec la base de donnée hsqldb contenue dans le fichier .odb (qui n'est qu'un zip contenant les tables et les fichiers utilisés par hsqldb).
  L'entrée de données se faisait via un certain nombre de formulaires à remplir. 
@@ -135,7 +135,7 @@ Ce ne fut cependant pas la phase la plus difficile. L'utilisation de ce langage 
 
 \subsection{Java}
 
-Après avoir fait face aux problèmes cités plus haut concernant l'implémentation comme macro openoffice l'auteur pris la décision de ré implémenter l'algorithme en Java, langage donnant l'avantage de la portabilité, apportant une simplification à l'interaction avec les utilisateurs et augmentant drastiquement la vitesse d'exécution (la base de données ne résidant plus que dans la mémoire ram de l'ordinateur). Comme pour OO BASIC la phase la plus longue fut l'apprentissage du langage en lui même. L'auteur étant déja familier avec le paradigme orienté objet\cite{ooparadigm} les concepts n'étaient pas nouveaux.
+Après avoir fait face aux problèmes cités plus haut concernant l'implémentation comme macro openoffice l'auteur pris la décision de ré implémenter l'algorithme en Java, langage donnant l'avantage de la portabilité, apportant une simplification à l'interaction avec les utilisateurs et augmentant drastique ment la vitesse d'exécution (la base de données ne résidant plus que dans la mémoire ram de l'ordinateur). Comme pour OO BASIC la phase la plus longue fut l'apprentissage du langage en lui même. L'auteur étant déjà familier avec le paradigme orienté objet les concepts n'étaient pas nouveaux.
 
 \chapter{Appendice}
 \section{Améliorations à apporter}
@@ -144,7 +144,7 @@ Plusieurs améliorations pourront être apportées à duty planner par la suite,
 En effet les personnes générant les gardes le font sur des périodes de au maximum six mois et la rédaction puis la maintenance d'une masse de code supplémentaire semblaient inutile\cite{yagn}.
 
 \section{indent.awk}
-Lors de la première implémentation de l'algorithme décrit plus avant, l'auteur s'est rapidement heurté à un problème d'indentation et de lisibilité du code. La quantité de code étant devenue trop grande et illisible pour une édition manuel il a mis au point et utilisé le script en awk\cite{awk} qui suit
+Lors de la première implémentation de l'algorithme décrit plus avant, l'auteur s'est rapidement heurté à un problème d'indentation et de lisibilité du code. La quantité de code étant devenue trop grande et illisible pour une édition manuel il a mis au point et utilisé le script en awk qui suit
 \begin{minted}[linenos,
                numbersep=5pt,
                gobble=2,
@@ -202,10 +202,10 @@ Lors de la première implémentation de l'algorithme décrit plus avant, l'auteu
    }
 \end{minted}
 \section{Rédaction de ce Document}
-La rédaction de ce document a été faite en utilisant Latex\cite{latex}, bibtex\cite{bibtex} ainsi que les packages biblatex\cite{biblatex} et minted\cite{minted} (pour la mise en forme du code).
-Minted utilise la bibliothèque python Pygments\cite{Pygments}.
- La rédaction en elle même a été effectuée à l'aide de l'éditeur de texte vim-nox\cite{vimnox}, la bibliographie constituée avec zotero\cite{zotero} en conjonction avec le navigateur web iceweasel.
- Le système d'exploitation supportant ce stack est Debian wheezy\cite{debian}.
+La rédaction de ce document a été faite en utilisant Latex, bibtex ainsi que les packages biblatex et minted (pour la mise en forme du code).
+Minted utilise la bibliothèque python Pygments.
+ La rédaction en elle même a été effectuée à l'aide de l'éditeur de texte vim-nox, la bibliographie constituée avec zotero en conjonction avec le navigateur web iceweasel.
+ Le système d'exploitation supportant ce stack est Debian wheezy.
 
 \printbibliography
 \end{document}
