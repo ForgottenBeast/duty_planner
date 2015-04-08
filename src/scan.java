@@ -113,7 +113,7 @@ public class scan {
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM SERVICES WHERE NOM = '".concat(sheet.getCell(2,i).getContents()).concat("'"));
 		while(rs2.next()){
 		nservice = rs2.getInt("NUMERO");
-		if(sheet.getCell(3,i).getCellFormat() != null){
+		if(sheet.getCell(3,i).getContents().length() != 0){
 			dc1 = (DateCell) sheet.getCell(3,i);
 			cal.setTime(dc1.getDate());
 			d1 = new java.sql.Date(cal.getTimeInMillis());
