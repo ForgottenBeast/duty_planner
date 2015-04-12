@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date; 
+
+import javax.swing.JOptionPane;
+
 import org.joda.time.*;
 import org.joda.time.DateTime;
 
@@ -196,15 +199,16 @@ while(rs2.next()){
 	sheet = data.getSheet(5);
 	String nom;
 	ResultSet monset;
-	int id;
+	int id = -1;
 	String nblundi,nbmardi,nbmercredi,nbjeudi,nbvendredi,nbsamedi,nbdimanche,nbferies,nbtotal;
 	for(int i = 1; i < sheet.getRows();i++){
 		if(sheet.getCell(0,i).getCellFormat() != null){
 			nom = sheet.getCell(0, i).getContents();
-			monset = mystatement.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = "+nom);
+			monset = mystatement.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '"+nom+"'");
 			while(monset.next()){
 				id = monset.getInt("NUMERO");
 			}
+			if(id != -1){
 			nbtotal = sheet.getCell(1,i).getContents();
 			nblundi = sheet.getCell(2,i).getContents();
 			nbmardi = sheet.getCell(3,i).getContents();
@@ -216,7 +220,8 @@ while(rs2.next()){
 			nbferies = sheet.getCell(9,i).getContents();
 			
 			rs = mystatement.executeUpdate("INSERT INTO OPTIONS(NUMERO,NBTOTAL,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES) VALUES("+Integer.toString(id)+","+nbtotal+","+nblundi+","+nbmardi+","+nbmercredi+","+nbjeudi+","+nbvendredi+","+nbsamedi+","+nbdimanche+","+nbferies+")");
-		}
+			}
+			}
 		}
 	}
 
@@ -361,16 +366,17 @@ while(rs2.next()){
 	 gtg res = new gtg();
 	 boolean gtg =  true;
 	 boolean inoptions = false;
-	 rs4 = ms4.executeQuery("SELECT * FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs4.next()){
+			
 		inoptions = true; 
 	 }
-	 
 	 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs2.next()){
 		 if(curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))){
 			 res.gtg = false;
 			 res.error = "pendant les vacances";
+			
 			 break;
 		 }
 	 }
@@ -411,6 +417,8 @@ while(rs2.next()){
 		}
 		
 		if(inoptions){
+			rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+			while(rs4.next()){
 			bftest = res.gtg;
 			res.gtg = res.gtg && (rs.getInt("NBGARDES") < rs4.getInt("NBTOTAL")) && (nbdays > repos);
 			if(bftest && !res.gtg){
@@ -427,6 +435,7 @@ while(rs2.next()){
 				if(bftest && !res.gtg){
 					res.error = "medecin dans les options, plus de feries qu'attribué dans les options";
 				}
+			}
 			}
 			
 		}
@@ -674,7 +683,7 @@ public static void writegardes(datepack monpack,Connection c, WritableWorkbook o
 public static void writestats(Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
 	WritableSheet ms = output.createSheet("stats", 1);
 	Statement mst = c.createStatement();
-	ResultSet rs = mst.executeQuery("SELECT M.NOM AS NOM, M.NBGARDES AS NBGARDES, M.NBFERIES AS NBFERIES,M.NBLUNDI AS NBLUNDI,M.NBMARDI AS NBMARDI,M.NBMERCREDI AS NBMERCREDI, M.NBJEUDI AS NBJEUDI, M.NBVENDREDI AS NBVENDREDI,M.NBSAMEDI AS NBSAMEDI,M.NBDIMANCHE AS NBDIMANCHE, S.NOM AS service FROM (MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) order by SERVICE ASC," + NOM ASC");
+	ResultSet rs = mst.executeQuery("SELECT M.NOM AS NOM, M.NBGARDES AS NBGARDES, M.NBFERIES AS NBFERIES,M.NBLUNDI AS NBLUNDI,M.NBMARDI AS NBMARDI,M.NBMERCREDI AS NBMERCREDI, M.NBJEUDI AS NBJEUDI, M.NBVENDREDI AS NBVENDREDI,M.NBSAMEDI AS NBSAMEDI,M.NBDIMANCHE AS NBDIMANCHE, S.NOM AS service FROM (MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) order by SERVICE ASC,NOM ASC");
 	Label l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,l12;
 	l1 = new Label(0,0,"nom");
 	l2 = new Label(1,0,"options");
