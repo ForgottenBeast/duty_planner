@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date; 
 
-import javax.swing.JOptionPane;
 
 import org.joda.time.*;
 import org.joda.time.DateTime;
@@ -121,14 +120,14 @@ public class scan {
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM SERVICES WHERE NOM = '".concat(sheet.getCell(1,i).getContents()).concat("'"));
 		while(rs2.next()){
 		nservice = rs2.getInt("NUMERO");
-		if(sheet.getCell(2,i).getContents().length() != 0){
+		if(sheet.getCell(2,i).getCellFormat() != null && sheet.getCell(2,i).getContents().length() != 0){
 			dc1 = (DateCell) sheet.getCell(2,i);
 			cal.setTime(dc1.getDate());
 			d1 = new java.sql.Date(cal.getTimeInMillis());
 			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE,DERNIEREGARDE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(Integer.toString(nservice))+",'"+d1+"')");
 		}
 		else{
-			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(",").concat(Integer.toString(nservice))+")");
+			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(Integer.toString(nservice))+")");
 		}
 		}
 			}
@@ -146,6 +145,7 @@ while(rs2.next()){
 	d1 = new java.sql.Date(cal.getTimeInMillis());
 	cal.setTime(dc2.getDate());
 	d2 = new java.sql.Date(cal.getTimeInMillis());
+	d2 = nextday(d2); //inclus le dernier jour des vacances
 	
 	
 		rs = mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES('"+d1+"','"+d2+"',".concat(Integer.toString(nmedecin)).concat(")"));
@@ -373,7 +373,7 @@ while(rs2.next()){
 	 }
 	 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs2.next()){
-		 if(curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))){
+		 if((curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))) || ((curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0) || (curdat.compareTo(rs2.getDate("DATEFIN"))==0))){
 			 res.gtg = false;
 			 res.error = "pendant les vacances";
 			
@@ -789,7 +789,7 @@ public static void updatedata(Connection c, Workbook data) throws SQLException, 
 		rs = ms.executeQuery("SELECT DERNIEREGARDE FROM MEDECINS WHERE NOM = '"+nom+"'");
 		while(rs.next()){
 			cal.setTime(rs.getDate("DERNIEREGARDE"));
-			WritableCell dt = new jxl.write.DateTime(3,i,new Date(cal.getTimeInMillis()),cf1);
+			WritableCell dt = new jxl.write.DateTime(2,i,new Date(cal.getTimeInMillis()),cf1);
 			mst.addCell(dt);	
 		}
 	}
