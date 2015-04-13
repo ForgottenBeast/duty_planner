@@ -243,7 +243,7 @@ while(rs2.next()){
 	 dc2 = (DateCell) msheet.getCell(1,1);
 	 datepack monpack = new datepack();
 	 monpack.upto = tosql(dc1.getDate());
-	 while(!monpack.upto.after(tosql(dc2.getDate()))){
+	 while(!monpack.upto.after(nextday(tosql(dc2.getDate())))){
 		 String dowtoinc = getdow(monpack.upto);
 			if(hasint){
 				monpack.garde.medundefined = true;
