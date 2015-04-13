@@ -66,7 +66,7 @@ public class scan {
 		 for (int i = 1; i < sheet.getRows(); i++){
 			 cur = sheet.getCell(1,i);
 			 if (!hasint){
-				 hasint = cur.getCellFormat() != null;
+				 hasint = cur.getCellFormat() != null && cur.getContents().length() != 0;
 			 }
 		 }
 		
@@ -107,7 +107,7 @@ public class scan {
 	 sheet = data.getSheet(4);
 	/* remplissage de la table de services*/
 	for (int i = 1; i < sheet.getRows();i++){
-		if(sheet.getCell(1,i).getCellFormat() != null){
+		if(sheet.getCell(1,i).getCellFormat() != null && sheet.getCell(1,i).getContents().length() != 0){
 			rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',TRUE)"));
 		}
 		else{
@@ -155,17 +155,17 @@ while(rs2.next()){
 	
 	sheet = data.getSheet(1);
 	for (int i = 1; i < sheet.getRows();i++){
-		if(sheet.getCell(0,i).getCellFormat() != null){
+		if(sheet.getCell(0,i).getCellFormat() != null && sheet.getCell(0,i).getContents().length() != 0){
 		DateCell dc = (DateCell)sheet.getCell(0,i);
 		dc = (DateCell) sheet.getCell(0,i);
 		cal.setTime(dc.getDate());
 		d1 = new java.sql.Date(cal.getTimeInMillis());
 		
-		if(sheet.getCell(1,i).getCellFormat() != null){
+		if(sheet.getCell(1,i).getCellFormat() != null && sheet.getCell(1,i).getContents().length() != 0){
 		rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '".concat(sheet.getCell(1,i).getContents()).concat("'"));
 		while(rs2.next()){
 		if(hasint){
-			mbool = sheet.getCell(2, i).getCellFormat() != null;
+			mbool = sheet.getCell(2, i).getCellFormat() != null && sheet.getCell(2,i).getContents().length() != 0;
 		int nmedecin = rs2.getInt("NUMERO");
 		
 		if(mbool){
@@ -203,7 +203,7 @@ while(rs2.next()){
 	int id = -1;
 	String nblundi,nbmardi,nbmercredi,nbjeudi,nbvendredi,nbsamedi,nbdimanche,nbferies,nbtotal;
 	for(int i = 1; i < sheet.getRows();i++){
-		if(sheet.getCell(0,i).getCellFormat() != null){
+		if(sheet.getCell(0,i).getCellFormat() != null && sheet.getCell(0,i).getContents().length() != 0){
 			nom = sheet.getCell(0, i).getContents();
 			monset = mystatement.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = '"+nom+"'");
 			while(monset.next()){
