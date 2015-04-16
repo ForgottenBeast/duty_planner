@@ -383,6 +383,7 @@ while(rs2.next()){
 	 boolean inoptions = false;
 	 int joursuivants;
 	 if(equilibrage == true){
+		 JOptionPane.showMessageDialog(null,"trying to give "+curdat+" to "+rs.getString("NOM"));
 		 if(!interieur){
 			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
 		 }
@@ -392,6 +393,7 @@ while(rs2.next()){
 		 while(rs5.next()){
 			 if(prevdat != curdat){
 				 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
+					 JOptionPane.showMessageDialog(null,"nexdat ok");
 					 res.gtg = true;
 					 break;
 				 }
