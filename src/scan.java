@@ -955,7 +955,16 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 							prevurg = rs5.getInt("SERVICE");
 						}
 						JOptionPane.showMessageDialog(null,rs2.getString("NOM")+" doit recevoir une garde de "+rs.getString("NOM")+" il/elle veux le "+fromsql(rs4.getDate("JOUR"))+" est ce bon?");
+						isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
 						if(isgood.gtg){
+							
+							action = m6.executeUpdate("UPDATE GARDES SET URGENCES = "+rs.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
+							rs6 = m6.executeQuery("SELECT "+dowtoinc+", NBGARDES, NUMERO FROM MEDECINS WHERE NUMERO = "+rs2.getInt("NUMERO"));
+							while(rs6.next()){
+								action = ms3.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
+								JOptionPane.showMessageDialog(null,"equilibrage effectué de "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
+							}
+							
 						}
 						
 					}
