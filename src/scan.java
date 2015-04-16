@@ -381,6 +381,32 @@ while(rs2.next()){
 	 boolean gtg =  true;
 	 java.sql.Date prevdat = curdat,nextdat = curdat;
 	 boolean inoptions = false;
+	 if(equilibrage == true){
+		 if(!interieur){
+			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
+		 }
+		 else{
+			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
+		 }
+		 while(rs5.next()){
+			 if(prevdat != curdat){
+				 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
+					 res.gtg = true;
+					 break;
+				 }
+				 else{
+					 JOptionPane.showMessageDialog(null,"nexdat not ok : "+rs5.getDate("JOUR")+"curdat = "+curdat);
+				 }
+			 }
+			 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat) ).getDays() >= repos){
+				prevdat = rs5.getDate("JOUR");
+				JOptionPane.showMessageDialog(null,"prevdat = "+prevdat+"curdat = "+curdat);
+			 }
+			 
+		 }
+	 
+	 return res;
+	 }
 	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs4.next()){
 			
@@ -401,37 +427,18 @@ while(rs2.next()){
 		 nbdays = nbdays*(-1);
 	 }
 	 while(rs3.next()){
-		 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
-		 if(daysbf < 0 && equilibrage == false){
-			 daysbf = daysbf*(-1);
-			 bftest = res.gtg;
-			 res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
-			 if(bftest && !res.gtg){
-				 res.error = "pas assez de temps de repos";
-			 }
-		 }
-		 else if(daysbf < 0 && equilibrage == true){
-			 if(!interieur){
-				 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
-			 }
-			 else{
-				 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
-			 }
-			 while(rs5.next()){
-				 if(prevdat != curdat){
-					 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
-						 res.gtg = res.gtg && true;
-						 break;
-					 }
-				 }
-				 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat) ).getDays() >= repos){
-					prevdat = rs5.getDate("JOUR");
-				 }
-				 
-			 }
-		 }
-		 
-	 }
+         int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
+         if(daysbf < 0){
+                 daysbf = daysbf*(-1);
+         }
+         bftest = res.gtg;
+         res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
+         if(bftest && !res.gtg){
+                 res.error = "pas assez de temps de repos";
+         }
+ }
+
+	 
 	 if(equilibrage == false){
 	bftest = res.gtg;
 	 res.gtg = res.gtg && ((nbdays > repos)||(nbdays < 0));
