@@ -269,6 +269,7 @@ while(rs2.next()){
 		monpack.upto = nextday(monpack.upto);
 	 }
 	 monpack.goal = tosql(dc2.getDate());
+	 equilibrer(c,hasint,repos);
 	 return monpack;
  }
  
