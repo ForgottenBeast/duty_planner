@@ -805,4 +805,32 @@ public static void updatedata(Connection c, Workbook data) throws SQLException, 
 	data2.close();
 }
 
+/**echange deux gardes a partir des dates
+ * @throws SQLException */
+public static void swap(Connection c, java.sql.Date d1,java.sql.Date d2,boolean interieur) throws SQLException{
+	int med1 = 0,med2 =0;
+	Statement ms = c.createStatement(),ms2 = c.createStatement();
+	int ru;
+	ResultSet rs,rs2;
+	if(interieur){
+		rs = ms.executeQuery("SELECT INTERIEUR as T1 FROM GARDES WHERE JOUR = '"+d1+"'");
+		rs2 = ms2.executeQuery("SELECT INTERIEUR as T2 FROM GARDES WHERE JOUR = '"+d2+"'");
+	}
+	else{
+		rs = ms.executeQuery("SELECT URGENCES as T1 FROM GARDES WHERE JOUR = '"+d1+"'");
+		rs2 = ms2.executeQuery("SELECT URGENCES as T2 FROM GARDES WHERE JOUR = '"+d2+"'");
+	}
+	while(rs.next()&&rs2.next()){
+		med1 = rs.getInt("T1");
+		med2 = rs2.getInt("T2");
+	}
+	if(interieur){
+		ru = ms.executeUpdate("UPDATE GARDES SET INTERIEUR  = "+Integer.toString(med2)+" WHERE JOUR = '"+d1+"'");
+		ru = ms.executeUpdate("UPDATE GARDEES SET INTERIEUR = "+Integer.toString(med1)+" WHERE JOUR = "+d2+"'");
+	}
+	else{
+		ru = ms.executeUpdate("UPDATE GARDES SET URGENCES  = "+Integer.toString(med2)+" WHERE JOUR = '"+d1+"'");
+		ru = ms.executeUpdate("UPDATE GARDEES SET URGENCES = "+Integer.toString(med1)+" WHERE JOUR = "+d2+"'");
+	}
+}
 }
