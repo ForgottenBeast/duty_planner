@@ -910,8 +910,8 @@ public static void swap(Connection c, java.sql.Date d1,java.sql.Date d2,boolean 
  * @throws SQLException 
  * @throws ParseException */
 public static void equilibrer(Connection c,boolean interieur,int repos) throws SQLException, ParseException{
-	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms3 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement(),m6 = c.createStatement();
-	ResultSet rs,rs2,rs3,rs4,rs5,rs6;
+	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms3 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement(),m6 = c.createStatement(),m7 = c.createStatement();
+	ResultSet rs,rs2,rs3,rs4,rs5,rs6,rs7;
 	int curg = 0,prevint = 666,prevurg = 0;
 	gtg isgood; 
 	int action,max = 0,min = 0,nbsamedi = 0,totgardes = 0,nbjour = 0;
