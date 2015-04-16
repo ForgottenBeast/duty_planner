@@ -366,7 +366,9 @@ while(rs2.next()){
  }
 
 /**boolean, check if someone can actually take the shift without ruining the fun for everyone else*/
- public static gtg isgtg(int curg,int prevint,int prevurg,Connection c,java.sql.Date curdat, ResultSet rs,String dowtoinc,boolean interieur,int repos) throws SQLException, ParseException{
+ 
+ /**MODIFIER CETTE METHODE POUR POUVOIR EQUILIBRER SANS TOUT CASSER : CAD CHECK DERNIERE GARDE DOIS CHECK VERS LE FUTUR SI DERNIERE GARDE EST PLUS TARD*/
+ public static gtg isgtg(int curg,int prevint,int prevurg,Connection c,java.sql.Date curdat, ResultSet rs,String dowtoinc,boolean interieur,int repos,boolean equilibrage) throws SQLException, ParseException{
 	 Statement ms4 = c.createStatement();
 	 Statement ms2 = c.createStatement();
 	 Statement ms3 = c.createStatement();
@@ -393,14 +395,15 @@ while(rs2.next()){
 	 }
 	 rs3 = ms3.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 int nbdays = Days.daysBetween(new org.joda.time.DateTime(rs.getDate("DERNIEREGARDE")), new org.joda.time.DateTime(curdat)).getDays();
-	 if(nbdays < 0){
+	 if(nbdays < 0 && equilibrage == false){
 		 nbdays = nbdays*(-1);
 	 }
 	 while(rs3.next()){
 		 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
-		 if(daysbf < 0){
+		 if(daysbf < 0 && equilibrage == false){
 			 daysbf = daysbf*(-1);
 		 }
+		 else if(equilibrage == true)
 		 bftest = res.gtg;
 		 res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
 		 if(bftest && !res.gtg){
@@ -527,7 +530,7 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||((rs.getInt("SERVICE") == nextint))&& hasint){
 			 			 continue;
 			 		 }
-			 		 gtg isgood = isgtg(curg,prevint,prevurg,c,curdat,rs,dowtoinc,interieur,repos);
+			 		 gtg isgood = isgtg(curg,prevint,prevurg,c,curdat,rs,dowtoinc,interieur,repos,false);
 					 if(isgood.gtg){
 						 res.garde.ferie = dateferiee(curdat,c);
 						 if(ferie){
