@@ -926,26 +926,24 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	}
 	String dowtoinc;
 	if(max > min+1){
-		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES <= "+Integer.toString(max)+"-1 GROUP BY MEDECINS.NUMERO");
+		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
 		//j'essaie d'abord d'equilibrer avec des lundimardimercredi
 		while(rs2.next()){
-			
-			rs = ms.executeQuery("SELECT NUMERO,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(max));
+			JOptionPane.showMessageDialog(null,rs2.getString("NOM")+"is trying to receive");
+			rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(max));
 			while(rs.next()){
-				nbjour = rs.getInt("NBLUNDI");
-				if(nbjour == 0){
-					nbjour = rs.getInt("NBMARDI");
-				}
-				if(nbjour == 0){
-					nbjour = rs.getInt("NBMERCREDI");
-				}
-				if(nbjour == 0){
-					continue;
-				}
+				JOptionPane.showMessageDialog(null, rs.getString("NOM")+"is trying to give");
 				if(!interieur){
 					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
 					while(rs4.next()){
 						dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
+						if(dowtoinc == "NBJEUDI"||dowtoinc == "NBVENDREDI"||dowtoinc=="NBSAMEDI"||dowtoinc=="NBDIMANCHE"){
+							JOptionPane.showMessageDialog(null, "too bad trying to give "+fromsql(rs4.getDate("JOUR"))+"which is a "+dowtoinc+" lets try again");
+							continue;
+						}
+						else{
+							JOptionPane.showMessageDialog(null, "trying to give a "+dowtoinc);
+						}
 						rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
 						while(rs5.next()){
 							curg = rs5.getInt("SERVICE");
@@ -958,19 +956,27 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 						isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
 						if(isgood.gtg){
 							
-							action = m6.executeUpdate("UPDATE GARDES SET URGENCES = "+rs.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
+							action = m6.executeUpdate("UPDATE GARDES SET URGENCES = "+rs2.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
 							rs6 = m6.executeQuery("SELECT "+dowtoinc+", NBGARDES, NUMERO FROM MEDECINS WHERE NUMERO = "+rs2.getInt("NUMERO"));
 							while(rs6.next()){
-								action = ms3.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
+								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
+								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));
 								JOptionPane.showMessageDialog(null,"equilibrage effectué de "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
+								
 							}
-							
+							break;
 						}
 						
 					}
+						break;
 				}
 			}
+			break;
 		}	
+		equilibrer(c,interieur,repos);
+	}
+	else{
+		JOptionPane.showMessageDialog(null, "pas besoin d'équilibrer");
 	}
 }
 
