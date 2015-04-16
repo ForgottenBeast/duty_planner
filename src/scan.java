@@ -367,8 +367,7 @@ while(rs2.next()){
 
 /**boolean, check if someone can actually take the shift without ruining the fun for everyone else*/
  
- /**MODIFIER CETTE METHODE POUR POUVOIR EQUILIBRER SANS TOUT CASSER : CAD CHECK DERNIERE GARDE DOIS CHECK VERS LE FUTUR SI DERNIERE GARDE EST PLUS TARD*/
- public static gtg isgtg(int curg,int prevint,int prevurg,Connection c,java.sql.Date curdat, ResultSet rs,String dowtoinc,boolean interieur,int repos,boolean equilibrage) throws SQLException, ParseException{
+  public static gtg isgtg(int curg,int prevint,int prevurg,Connection c,java.sql.Date curdat, ResultSet rs,String dowtoinc,boolean interieur,int repos,boolean equilibrage) throws SQLException, ParseException{
 	 Statement ms4 = c.createStatement();
 	 Statement ms2 = c.createStatement();
 	 Statement ms3 = c.createStatement();
@@ -910,24 +909,27 @@ public static void swap(Connection c, java.sql.Date d1,java.sql.Date d2,boolean 
  * @throws SQLException 
  * @throws ParseException */
 public static void equilibrer(Connection c,boolean interieur,int repos) throws SQLException, ParseException{
-	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms3 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement(),m6 = c.createStatement(),m7 = c.createStatement();
-	ResultSet rs,rs2,rs3,rs4,rs5,rs6,rs7;
-	int curg = 0,prevint = 666,prevurg = 0;
+	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms8 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement(),m6 = c.createStatement(),m7 = c.createStatement();
+	ResultSet rs,rs2,rs8,rs4,rs5,rs6,rs7;
+	int curg = 0,nbmeds = 0,prevint = 666,prevurg = 0,nbjeudi = 0;
 	gtg isgood; 
 	int action,max = 0,min = 0,nbsamedi = 0,totgardes = 0,nbjour = 0;
-	rs = ms.executeQuery("SELECT MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBGARDES) as TOTGARDES FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO");
+	rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds, MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO");
 	while(rs.next()){
 		max = rs.getInt("MAXG");
 		min = rs.getInt("MING");
 		nbsamedi = rs.getInt("ALLSAMS");
+		nbjeudi = rs.getInt("allthu");
 		totgardes = rs.getInt("TOTGARDES");
-		JOptionPane.showMessageDialog(null,"MAX = "+max+" min = "+min+"nbsamedi = "+nbsamedi+" totgardes = "+totgardes);
+		nbmeds = rs.getInt("nbmeds");
+		JOptionPane.showMessageDialog(null,"MAX = "+max+" min = "+min+"nbsamedi = "+nbsamedi+" totgardes = "+totgardes+"il devrait y avoir max "+Integer.toString(nbsamedi/nbmeds)+" samedi par medecins"+"et max "+Integer.toString(nbjeudi/nbmeds)+" nbjeudi par medecins");
 
 	}
+	rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
+
 	String dowtoinc;
 	if(max > min+1){
 		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
-		//j'essaie d'abord d'equilibrer avec des lundimardimercredi
 		while(rs2.next()){
 			JOptionPane.showMessageDialog(null,rs2.getString("NOM")+"is trying to receive");
 			rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(max));
