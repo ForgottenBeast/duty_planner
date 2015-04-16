@@ -372,12 +372,14 @@ while(rs2.next()){
 	 Statement ms4 = c.createStatement();
 	 Statement ms2 = c.createStatement();
 	 Statement ms3 = c.createStatement();
+	 Statement ms5 = c.createStatement();
 	 ResultSet rs4;
 	 ResultSet rs2;
-	 ResultSet rs3;
+	 ResultSet rs3,rs5;
 	 boolean bftest = true;
 	 gtg res = new gtg();
 	 boolean gtg =  true;
+	 java.sql.Date prevdat = curdat,nextdat = curdat;
 	 boolean inoptions = false;
 	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs4.next()){
@@ -402,20 +404,68 @@ while(rs2.next()){
 		 int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
 		 if(daysbf < 0 && equilibrage == false){
 			 daysbf = daysbf*(-1);
+			 bftest = res.gtg;
+			 res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
+			 if(bftest && !res.gtg){
+				 res.error = "pas assez de temps de repos";
+			 }
 		 }
-		 else if(equilibrage == true)
-		 bftest = res.gtg;
-		 res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
-		 if(bftest && !res.gtg){
-			 res.error = "pas assez de temps de repos";
+		 else if(daysbf < 0 && equilibrage == true){
+			 if(!interieur){
+				 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
+			 }
+			 else{
+				 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
+			 }
+			 while(rs5.next()){
+				 if(prevdat != curdat){
+					 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
+						 res.gtg = res.gtg && true;
+						 break;
+					 }
+				 }
+				 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat) ).getDays() >= repos){
+					prevdat = rs5.getDate("JOUR");
+				 }
+				 
+			 }
 		 }
+		 
 	 }
+	 if(equilibrage == false){
 	bftest = res.gtg;
 	 res.gtg = res.gtg && ((nbdays > repos)||(nbdays < 0));
 	 if(bftest && !res.gtg){
 		 res.error = "pas assez de temps de repos";
 	 }
-	
+	 }
+	 else{
+		 if(!interieur){
+			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
+		 }
+		 else{
+			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
+		 }
+		 while(rs5.next()){
+			 if(prevdat != curdat){
+				 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
+					 res.gtg = res.gtg && true;
+					 break;
+				 }
+				 else{
+					 prevdat = curdat;
+				 }
+			 }
+			 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat) ).getDays() >= repos){
+				prevdat = rs5.getDate("JOUR");
+			 }
+			 
+		 }
+		 if(prevdat == curdat){
+			 res.gtg = false;
+			 res.error = "echec d'equilibrage : pas la place de caler la date entre les gardes";
+		 }
+	 }
 		if(interieur){
 			bftest  = res.gtg;
 			res.gtg = res.gtg && (rs.getInt("SERVICE")!=curg);
