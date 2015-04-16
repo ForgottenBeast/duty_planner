@@ -392,7 +392,11 @@ while(rs2.next()){
 		 }
 		 while(rs5.next()){
 			 if(prevdat != curdat){
-				 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
+				 joursuivants = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays();
+				 if(joursuivants < 0){
+					 joursuivants *= -1;
+				 }
+				 if(joursuivants >= repos){
 					 JOptionPane.showMessageDialog(null,"nexdat ok");
 					 res.gtg = true;
 					 break;
