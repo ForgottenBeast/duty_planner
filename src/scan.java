@@ -379,8 +379,9 @@ while(rs2.next()){
 	 boolean bftest = true;
 	 gtg res = new gtg();
 	 boolean gtg =  true;
-	 java.sql.Date prevdat = curdat,nextdat = curdat;
+	 java.sql.Date prevdat = curdat;
 	 boolean inoptions = false;
+	 int joursuivants;
 	 if(equilibrage == true){
 		 if(!interieur){
 			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
