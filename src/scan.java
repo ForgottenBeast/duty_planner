@@ -269,7 +269,7 @@ while(rs2.next()){
 		monpack.upto = nextday(monpack.upto);
 	 }
 	 monpack.goal = tosql(dc2.getDate());
-	 equilibrer(c,hasint,repos);
+	// equilibrer(c,hasint,repos);
 	 return monpack;
  }
  
@@ -395,7 +395,7 @@ while(rs2.next()){
 					 break;
 				 }
 				 else{
-					 JOptionPane.showMessageDialog(null,"nexdat not ok : "+rs5.getDate("JOUR")+"curdat = "+curdat);
+					 JOptionPane.showMessageDialog(null,"nexdat not ok  : only "+Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays()+" days, need at least"+repos);
 				 }
 			 }
 			 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat) ).getDays() >= repos){
@@ -906,7 +906,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	int curg = 0,prevint = 666,prevurg = 0;
 	gtg isgood; 
 	int action,max = 0,min = 0,nbsamedi = 0,totgardes = 0,nbjour = 0;
-	rs = ms.executeQuery("SELECT MAX(NBGARDES) as MAXG,SUM(NBSAMEDI) as ALLSAMS,SUM(NBGARDES) as TOTGARDES FROM MEDECINS");
+	rs = ms.executeQuery("SELECT MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBGARDES) as TOTGARDES FROM MEDECINS");
 	while(rs.next()){
 		max = rs.getInt("MAXG");
 		min = rs.getInt("MING");
@@ -917,7 +917,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	JOptionPane.showMessageDialog(null,"maxgardes = "+max+" mingardes = "+min+" nbsamedi = "+nbsamedi+"totgardes = "+totgardes);
 	boolean inoptions = false;
 	if(max > min+1){
-		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(min));
+		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES <= "+Integer.toString(max)+"-1");
 		//j'essaie d'abord d'equilibrer avec des lundimardimercredi
 		while(rs2.next()){
 			 rs3 = ms3.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = "+Integer.toString(rs2.getInt("NUMERO")));
@@ -926,6 +926,8 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 				 inoptions = true; 
 			 }
 			 if(inoptions == true){
+				 inoptions = false;
+				 JOptionPane.showMessageDialog(null,rs2.getString("NOM")+"a moins de garde mais est dans les options, je continue");
 				 continue;
 			 }
 			rs = ms.executeQuery("SELECT NUMERO,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(max));
