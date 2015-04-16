@@ -269,7 +269,7 @@ while(rs2.next()){
 		monpack.upto = nextday(monpack.upto);
 	 }
 	 monpack.goal = tosql(dc2.getDate());
-	// equilibrer(c,hasint,repos);
+	equilibrer(c,hasint,repos);
 	 return monpack;
  }
  
@@ -906,12 +906,14 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	int curg = 0,prevint = 666,prevurg = 0;
 	gtg isgood; 
 	int action,max = 0,min = 0,nbsamedi = 0,totgardes = 0,nbjour = 0;
-	rs = ms.executeQuery("SELECT MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBGARDES) as TOTGARDES FROM MEDECINS");
+	rs = ms.executeQuery("SELECT MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBGARDES) as TOTGARDES FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO");
 	while(rs.next()){
 		max = rs.getInt("MAXG");
 		min = rs.getInt("MING");
 		nbsamedi = rs.getInt("ALLSAMS");
 		totgardes = rs.getInt("TOTGARDES");
+		JOptionPane.showMessageDialog(null,"MAX = "+max+" min = "+min+"nbsamedi = "+nbsamedi+" totgardes = "+totgardes);
+
 	}
 	String dowtoinc;
 	boolean inoptions = false;
@@ -919,16 +921,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES <= "+Integer.toString(max)+"-1");
 		//j'essaie d'abord d'equilibrer avec des lundimardimercredi
 		while(rs2.next()){
-			 rs3 = ms3.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = "+Integer.toString(rs2.getInt("NUMERO")));
-			 while(rs3.next()){
-					
-				 inoptions = true; 
-			 }
-			 if(inoptions == true){
-				 inoptions = false;
-				 JOptionPane.showMessageDialog(null,rs2.getString("NOM")+"a moins de garde mais est dans les options, je continue");
-				 continue;
-			 }
+			
 			rs = ms.executeQuery("SELECT NUMERO,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(max));
 			while(rs.next()){
 				nbjour = rs.getInt("NBLUNDI");
