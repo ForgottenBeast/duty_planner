@@ -385,10 +385,10 @@ while(rs2.next()){
 	 if(equilibrage == true){
 		 JOptionPane.showMessageDialog(null,"trying to give "+curdat+" to "+rs.getString("NOM"));
 		 if(!interieur){
-			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
+			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO"))+" ORDER BY JOUR ASC");
 		 }
 		 else{
-			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
+			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO"))+" ORDER BY JOUR ASC");
 		 }
 		 while(rs5.next()){
 			 if(prevdat != curdat){
@@ -399,20 +399,22 @@ while(rs2.next()){
 				 if(joursuivants >= repos){
 					 JOptionPane.showMessageDialog(null,"nexdat ok");
 					 res.gtg = true;
-					 break;
+					 return res;
 				 }
 				 else{
-					 JOptionPane.showMessageDialog(null,"nexdat not ok  : only "+Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays()+" days, need at least"+repos);
+					 JOptionPane.showMessageDialog(null,"nexdat not ok  : only "+Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays()+" days between"+curdat+" and "+rs5.getDate("JOUR")+", need at least"+repos);
+					 prevdat = curdat;
 				 }
 			 }
-			 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat) ).getDays() >= repos){
+			 if(Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat)).getDays() >= repos){
 				prevdat = rs5.getDate("JOUR");
-				JOptionPane.showMessageDialog(null,"prevdat = "+prevdat+"curdat = "+curdat);
+				JOptionPane.showMessageDialog(null,"prevdat = "+prevdat+"curdat = "+curdat+", "+Days.daysBetween(new org.joda.time.DateTime(rs5.getDate("JOUR")),new org.joda.time.DateTime(curdat)).getDays()+"jours de repos");
 			 }
 			 
 		 }
+		 res.gtg = false;
+		 return res;
 	 
-	 return res;
 	 }
 	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs4.next()){
@@ -923,9 +925,8 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 
 	}
 	String dowtoinc;
-	boolean inoptions = false;
 	if(max > min+1){
-		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES <= "+Integer.toString(max)+"-1");
+		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES <= "+Integer.toString(max)+"-1 GROUP BY MEDECINS.NUMERO");
 		//j'essaie d'abord d'equilibrer avec des lundimardimercredi
 		while(rs2.next()){
 			
