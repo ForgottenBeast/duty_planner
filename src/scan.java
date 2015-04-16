@@ -894,8 +894,10 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 						while(rs5.next()){
 							prevurg = rs5.getInt("SERVICE");
 						}
+						JOptionPane.showMessageDialog(null,"equilibrage de "+rs2.getString("NOM")+" et "+rs.getString("NOM")+"le "+fromsql(rs4.getDate("JOUR"))+"bon?");
 						isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs,dowtoinc,interieur,repos,true);
 						if(isgood.gtg){
+							JOptionPane.showMessageDialog(null,"equilibrage de "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
 						}
 						
 					}
