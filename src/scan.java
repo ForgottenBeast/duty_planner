@@ -833,4 +833,9 @@ public static void swap(Connection c, java.sql.Date d1,java.sql.Date d2,boolean 
 		ru = ms.executeUpdate("UPDATE GARDEES SET URGENCES = "+Integer.toString(med1)+" WHERE JOUR = "+d2+"'");
 	}
 }
+static Date fromsql(java.sql.Date d1){
+	 java.util.Date utilDate = new java.util.Date(d1.getTime());
+	 return utilDate;
+}
+
 }
