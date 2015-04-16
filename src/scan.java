@@ -833,6 +833,54 @@ public static void swap(Connection c, java.sql.Date d1,java.sql.Date d2,boolean 
 		ru = ms.executeUpdate("UPDATE GARDEES SET URGENCES = "+Integer.toString(med1)+" WHERE JOUR = "+d2+"'");
 	}
 }
+
+/** equilibre le tableau de garde de la manière la plus juste possible en prenant en compte le poids des jours
+ * @throws SQLException */
+public static void equilibrer(Connection c,boolean interieur,int repos) throws SQLException{
+	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms3 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement();
+	ResultSet rs,rs2,rs3,rs4,rs5;
+	int curg,prevint,prevurg;
+	gtg isgood; 
+	int action,max = 0,min = 0,nbsamedi,totgardes,nbjour = 0;
+	rs = ms.executeQuery("SELECT MAX(NBGARDES) as MAXG,MIN(NBGARDES) AS MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBGARDES) as TOTGARDES FROM MEDECINS");
+	while(rs.next()){
+		max = rs.getInt("MAXG");
+		min = rs.getInt("MING");
+		nbsamedi = rs.getInt("ALLSAMS");
+		totgardes = rs.getInt("TOTGARDES");
+	}
+	String dowtoinc;
+	if(max > min+1){
+		rs2 = ms2.executeQuery("SELECT NUMERO,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(min));
+		//j'essaie d'abord d'equilibrer avec des lundimardimercredi
+		while(rs2.next()){
+			rs = ms.executeQuery("SELECT NUMERO,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES = "+Integer.toString(max));
+			while(rs.next()){
+				rs = ms3.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NUMERO = "+Integer.toString(rs2.getInt("NUMERO")));
+				nbjour = rs.getInt("NBLUNDI");
+				if(nbjour == 0){
+					nbjour = rs.getInt("NBMARDI");
+				}
+				if(nbjour == 0){
+					nbjour = rs.getInt("NBMERCREDI");
+				}
+				if(nbjour == 0){
+					continue;
+				}
+				if(interieur){
+					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
+					while(rs4.next()){
+						dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
+				
+							isgood = isgtg(curg,prevint,prevurg,c,curdat,rs,dowtoinc,interieur,repos);
+						
+					}
+				}
+			}
+		}	
+	}
+}
+
 static Date fromsql(java.sql.Date d1){
 	 java.util.Date utilDate = new java.util.Date(d1.getTime());
 	 return utilDate;
