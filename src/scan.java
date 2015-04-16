@@ -914,7 +914,6 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		totgardes = rs.getInt("TOTGARDES");
 	}
 	String dowtoinc;
-	JOptionPane.showMessageDialog(null,"maxgardes = "+max+" mingardes = "+min+" nbsamedi = "+nbsamedi+"totgardes = "+totgardes);
 	boolean inoptions = false;
 	if(max > min+1){
 		rs2 = ms2.executeQuery("SELECT NUMERO,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBGARDES <= "+Integer.toString(max)+"-1");
