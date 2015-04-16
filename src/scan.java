@@ -285,6 +285,13 @@ while(rs2.next()){
 	 return new java.sql.Date(cal.getTimeInMillis());
  }
  
+ public static java.sql.Date prevday(java.sql.Date curdat){
+	 Calendar cal = Calendar.getInstance();
+	 cal.setTime(curdat);
+	 cal.add(Calendar.DATE, -1);
+	 return new java.sql.Date(cal.getTimeInMillis());
+ }
+ 
  public static boolean dateferiee(java.sql.Date madate, Connection c) throws SQLException{
 	 Statement ms = c.createStatement();
 	 ResultSet rs = ms.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE JOUR='"+madate+"'");
