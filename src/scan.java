@@ -924,18 +924,30 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		nbmeds = rs.getInt("nbmeds");
 		JOptionPane.showMessageDialog(null,"MAX = "+max+" min = "+min+"nbsamedi = "+nbsamedi+" totgardes = "+totgardes+"il devrait y avoir max "+Integer.toString(nbsamedi/nbmeds)+" samedi par medecins"+"et max "+Integer.toString(nbjeudi/nbmeds)+" nbjeudi par medecins");
 	}
-	String dowtoinc = "NBSAMEDI";
-	rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBSAMEDI < "+Integer.toString(nbsamedi/nbmeds)+" GROUP BY MEDECINS.NUMERO");
+	int calcval;
+	String dowtoinc,curdow;
+	for(int i = 0; i < 2; i++){
+	 if(i==0){
+		 dowtoinc = "NBSAMEDI";
+		 calcval = nbsamedi/nbmeds;
+		 JOptionPane.showMessageDialog(null, "doing "+dowtoinc);
+	 }
+	 else{
+		 dowtoinc = "NBJEUDI";
+		 calcval = nbjeudi/nbmeds;
+		 JOptionPane.showMessageDialog(null, "doing "+dowtoinc);
+	 }
+	rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE "+dowtoinc+" < "+Integer.toString(calcval)+" GROUP BY MEDECINS.NUMERO");
 	while(rs2.next()){
-		JOptionPane.showMessageDialog(null, rs2.getString("NOM")+" essaie de recevoir un samedi");
-		rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBSAMEDI > "+Integer.toString(nbsamedi/nbmeds));
+		JOptionPane.showMessageDialog(null, rs2.getString("NOM")+" essaie de recevoir un "+dowtoinc);
+		rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE "+dowtoinc+" > "+Integer.toString(calcval));
 		while(rs.next()){
-			JOptionPane.showMessageDialog(null, rs.getString("NOM")+" essaie de donner un samedi");
+			JOptionPane.showMessageDialog(null, rs.getString("NOM")+" essaie de donner un "+dowtoinc);
 			if(!interieur){
 				rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
 				while(rs4.next()){
-					dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
-					if(dowtoinc != "NBSAMEDI"){
+					curdow = getdow(fromsql(rs4.getDate("JOUR")));
+					if(curdow != dowtoinc){
 						continue;
 					}
 					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
@@ -946,7 +958,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 					while(rs5.next()){
 						prevurg = rs5.getInt("SERVICE");
 					}
-					JOptionPane.showMessageDialog(null,rs2.getString("NOM")+" doit recevoir une garde samedi de "+rs.getString("NOM")+" il/elle veux le "+fromsql(rs4.getDate("JOUR"))+" est ce bon?");
+					JOptionPane.showMessageDialog(null,rs2.getString("NOM")+" doit recevoir une garde "+dowtoinc+" de "+rs.getString("NOM")+" il/elle veux le "+fromsql(rs4.getDate("JOUR"))+" est ce bon?");
 					isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
 					if(isgood.gtg){
 						
@@ -955,7 +967,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 						while(rs6.next()){
 							action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
 							action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));
-							JOptionPane.showMessageDialog(null,"equilibrage effectué de samedi "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
+							JOptionPane.showMessageDialog(null,"equilibrage effectué de "+dowtoinc+" "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
 							
 						}
 					}
@@ -972,6 +984,10 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 				break;
 			}
 		}
+		if(!(isgood == null)&&isgood.gtg){
+			break;
+		}
+	}
 	}
 
 	if(max > min+1){
