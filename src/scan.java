@@ -912,14 +912,18 @@ public static void swap(Connection c, java.sql.Date d1,java.sql.Date d2,boolean 
 public static void equilibrer(Connection c,boolean interieur,int repos) throws SQLException, ParseException{
 	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms8 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement(),m6 = c.createStatement(),m7 = c.createStatement();
 	ResultSet rs,rs2,rs8,rs4,rs5,rs6,rs7;
-	int curg = 0,nbmeds = 0,prevint = 666,prevurg = 0,nbjeudi = 0;
+	int curg = 0,nbmeds = 0,prevint = 666,prevurg = 0,nbjeudi = 0,nbvendredi = 0,nbsamedi = 0,nbdimanche = 0;
 	gtg isgood = null; 
-	int action,max = 0,min = 0,nbsamedi = 0,totgardes = 0,nbjour = 0;
-	rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds, MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO");
+	boolean done = false;
+	String secteur = "URGENCES";
+	int action,max = 0,min = 0,totgardes = 0,nbjour = 0;
+	rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds,SUM(NBVENDREDI) as allvend,SUM(NBDIMANCHE) as alldim MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO");
 	while(rs.next()){
 		max = rs.getInt("MAXG");
 		min = rs.getInt("MING");
 		nbsamedi = rs.getInt("ALLSAMS");
+		nbvendredi = rs.getInt("allvend");
+		nbdimanche = rs.getInt("alldim");
 		nbjeudi = rs.getInt("allthu");
 		totgardes = rs.getInt("TOTGARDES");
 		nbmeds = rs.getInt("nbmeds");
@@ -945,17 +949,22 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		while(rs.next()){
 			JOptionPane.showMessageDialog(null, rs.getString("NOM")+" essaie de donner un "+dowtoinc);
 			if(!interieur){
+				secteur = "URGENCES";
+			}
+			else{
+				secteur = "INTERIEUR";
+			}
 				rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
 				while(rs4.next()){
 					curdow = getdow(fromsql(rs4.getDate("JOUR")));
 					if(curdow != dowtoinc){
 						continue;
 					}
-					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
+					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G."+secteur+" WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
 					while(rs5.next()){
 						curg = rs5.getInt("SERVICE");
 					}
-					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+prevday(rs4.getDate("JOUR"))+"'");
+					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G."+secteur+" WHERE G.JOUR = '"+prevday(rs4.getDate("JOUR"))+"'");
 					while(rs5.next()){
 						prevurg = rs5.getInt("SERVICE");
 					}
@@ -963,13 +972,14 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 					isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
 					if(isgood.gtg){
 						
-						action = m6.executeUpdate("UPDATE GARDES SET URGENCES = "+rs2.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
+						action = m6.executeUpdate("UPDATE GARDES SET "+secteur+" = "+rs2.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
 						rs6 = m6.executeQuery("SELECT "+dowtoinc+", NBGARDES, NUMERO FROM MEDECINS WHERE NUMERO = "+rs2.getInt("NUMERO"));
 						while(rs6.next()){
 							action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
 							action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));
 							JOptionPane.showMessageDialog(null,"equilibrage effectué de "+dowtoinc+" "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
-							
+							done = true;
+						
 						}
 					}
 					if(!(isgood == null) && isgood.gtg){
@@ -977,16 +987,74 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 					}
 					
 				}
-				if(!(isgood == null) && isgood.gtg){
+				if(!(isgood == null) && isgood.gtg && done){
 					break;
 				}
-			}
+				
+			
 			if(!(isgood == null)&&isgood.gtg){
 				break;
 			}
 		}
 		if(!(isgood == null)&&isgood.gtg){
 			break;
+		}
+		else{
+			JOptionPane.showMessageDialog(null, "pas assez de "+dowtoinc+" replacing");
+			if(dowtoinc == "NBSAMEDI"){
+				calcval = nbsamedi/nbmeds;
+				for(i = 0; i < 2; i++){
+					if(i == 0){
+						dowtoinc = "NBVENDREDI";
+					}
+					else{
+						dowtoinc = "NBDIMANCHE";
+					}
+					JOptionPane.showMessageDialog(null, "trying to give a "+dowtoinc);
+				rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE "+dowtoinc+" >= "+Integer.toString(calcval)+" ORDER BY "+dowtoinc);
+				while(rs.next()){
+					if(!interieur){
+						secteur = "URGENCES";
+					}
+					else{
+						secteur = "INTERIEUR";
+					}
+					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
+					while(rs4.next()){
+						curdow = getdow(fromsql(rs4.getDate("JOUR")));
+						if(curdow != dowtoinc){
+							continue;
+						}
+						rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G."+secteur+" WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
+						while(rs5.next()){
+							curg = rs5.getInt("SERVICE");
+						}
+						rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G."+secteur+" WHERE G.JOUR = '"+prevday(rs4.getDate("JOUR"))+"'");
+						while(rs5.next()){
+							prevurg = rs5.getInt("SERVICE");
+						}
+						JOptionPane.showMessageDialog(null,rs2.getString("NOM")+" doit recevoir une garde "+dowtoinc+" de "+rs.getString("NOM")+" il/elle veux le "+fromsql(rs4.getDate("JOUR"))+" est ce bon?");
+						isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
+						if(isgood.gtg){
+							
+							action = m6.executeUpdate("UPDATE GARDES SET "+secteur+" = "+rs2.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
+							rs6 = m6.executeQuery("SELECT "+dowtoinc+", NBGARDES, NUMERO FROM MEDECINS WHERE NUMERO = "+rs2.getInt("NUMERO"));
+							while(rs6.next()){
+								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
+								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));
+								JOptionPane.showMessageDialog(null,"equilibrage effectué de "+dowtoinc+" "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
+								done = true;
+							
+							}
+						}
+				}
+				}
+			}
+			}	
+			else{//dowtoinc = "nbjeudi"
+				calcval = nbjeudi/nbmeds;
+			}
+								//ici ajouter pour le cas ou zero samedi et transférer un vendredi et un dimanche, aussi pour le cas ou zero jeudi et remplacer par une avant veille de jour férié
 		}
 	}
 	}
