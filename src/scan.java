@@ -1190,6 +1190,9 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 							
 							}
 						}
+						else{
+							JOptionPane.showMessageDialog(null, "NAN PAS BON! et done = "+done+"isgood = "+isgood+" isgood.gtg = "+isgood.gtg);
+						}
 						if((!(isgood == null) && isgood.gtg)||done == true){
 							
 							break;
@@ -1207,7 +1210,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		}
 	}
 	}
-	JOptionPane.showMessageDialog(null, "now balancing lundimardimercredi");
+	JOptionPane.showMessageDialog(null, "now balancing lundimardimercredi et dimanche non set");
 	if(max > min+1 || done){
 		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
 		while(rs2.next()){
@@ -1217,7 +1220,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO"))+" and MANUALLY_SET = FALSE");
 					while(rs4.next()){
 						dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
-						if(dowtoinc == "NBJEUDI"||dowtoinc == "NBVENDREDI"||dowtoinc=="NBSAMEDI"||dowtoinc=="NBDIMANCHE"){
+						if(dowtoinc == "NBJEUDI"||dowtoinc == "NBVENDREDI"||dowtoinc=="NBSAMEDI"){
 							continue;
 						}
 						
