@@ -912,7 +912,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	Statement ms = c.createStatement(),ms2 = c.createStatement(),ms8 = c.createStatement(),ms4 = c.createStatement(),ms5 = c.createStatement(),m6 = c.createStatement(),m7 = c.createStatement();
 	ResultSet rs,rs2,rs8,rs4,rs5,rs6,rs7;
 	int curg = 0,nbmeds = 0,prevint = 666,prevurg = 0,nbjeudi = 0;
-	gtg isgood; 
+	gtg isgood = null; 
 	int action,max = 0,min = 0,nbsamedi = 0,totgardes = 0,nbjour = 0;
 	rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds, MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO");
 	while(rs.next()){
@@ -926,6 +926,16 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 
 	}
 	rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
+					if(!(isgood == null) && isgood.gtg){
+						break;
+					}
+					
+				if(!(isgood == null) && isgood.gtg){
+					break;
+				}
+			if(!(isgood == null)&&isgood.gtg){
+				break;
+			}
 
 	String dowtoinc;
 	if(max > min+1){
