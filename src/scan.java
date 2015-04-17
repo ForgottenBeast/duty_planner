@@ -923,21 +923,57 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		totgardes = rs.getInt("TOTGARDES");
 		nbmeds = rs.getInt("nbmeds");
 		JOptionPane.showMessageDialog(null,"MAX = "+max+" min = "+min+"nbsamedi = "+nbsamedi+" totgardes = "+totgardes+"il devrait y avoir max "+Integer.toString(nbsamedi/nbmeds)+" samedi par medecins"+"et max "+Integer.toString(nbjeudi/nbmeds)+" nbjeudi par medecins");
-
 	}
-	rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
+	String dowtoinc = "NBSAMEDI";
+	rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBSAMEDI < "+Integer.toString(nbsamedi/nbmeds)+" GROUP BY MEDECINS.NUMERO");
+	while(rs2.next()){
+		JOptionPane.showMessageDialog(null, rs2.getString("NOM")+" essaie de recevoir un samedi");
+		rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBSAMEDI > "+Integer.toString(nbsamedi/nbmeds));
+		while(rs.next()){
+			JOptionPane.showMessageDialog(null, rs.getString("NOM")+" essaie de donner un samedi");
+			if(!interieur){
+				rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO")));
+				while(rs4.next()){
+					dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
+					if(dowtoinc != "NBSAMEDI"){
+						continue;
+					}
+					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
+					while(rs5.next()){
+						curg = rs5.getInt("SERVICE");
+					}
+					rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+prevday(rs4.getDate("JOUR"))+"'");
+					while(rs5.next()){
+						prevurg = rs5.getInt("SERVICE");
+					}
+					JOptionPane.showMessageDialog(null,rs2.getString("NOM")+" doit recevoir une garde samedi de "+rs.getString("NOM")+" il/elle veux le "+fromsql(rs4.getDate("JOUR"))+" est ce bon?");
+					isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
+					if(isgood.gtg){
+						
+						action = m6.executeUpdate("UPDATE GARDES SET URGENCES = "+rs2.getInt("NUMERO")+" WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
+						rs6 = m6.executeQuery("SELECT "+dowtoinc+", NBGARDES, NUMERO FROM MEDECINS WHERE NUMERO = "+rs2.getInt("NUMERO"));
+						while(rs6.next()){
+							action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
+							action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));
+							JOptionPane.showMessageDialog(null,"equilibrage effectué de samedi "+rs2.getString("NOM")+" et "+rs.getString("NOM"));
+							
+						}
+					}
 					if(!(isgood == null) && isgood.gtg){
 						break;
 					}
 					
+				}
 				if(!(isgood == null) && isgood.gtg){
 					break;
 				}
+			}
 			if(!(isgood == null)&&isgood.gtg){
 				break;
 			}
+		}
+	}
 
-	String dowtoinc;
 	if(max > min+1){
 		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE NBGARDES < "+Integer.toString(max-1)+" GROUP BY MEDECINS.NUMERO");
 		while(rs2.next()){
