@@ -290,10 +290,9 @@ while(rs2.next()){
  }
  
  public static java.sql.Date prevday(java.sql.Date curdat){
-	 Calendar cal = Calendar.getInstance();
-	 cal.setTime(curdat);
-	 cal.add(Calendar.DATE, -1);
-	 return new java.sql.Date(cal.getTimeInMillis());
+	 DateTime ladate = new DateTime( curdat, DateTimeZone.UTC );;
+	 ladate = ladate.minusDays(1);
+	 return new java.sql.Date(ladate.getMillis());
  }
  
  public static boolean dateferiee(java.sql.Date madate, Connection c) throws SQLException{
