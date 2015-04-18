@@ -1246,7 +1246,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO"))+" and MANUALLY_SET = FALSE ORDER BY DAYOFWEEK(JOUR) ASC");
 					while(rs4.next()){
 						dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
-						if(dowtoinc == "NBJEUDI"||dowtoinc == "NBVENDREDI"||dowtoinc=="NBSAMEDI"){
+						if(dowtoinc == "NBJEUDI"||dowtoinc == "NBVENDREDI"||dowtoinc=="NBSAMEDI"||dowtoinc == "NBDIMANCHE"){
 							continue;
 						}
 						
@@ -1287,6 +1287,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 		}	
 		rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds,SUM(NBVENDREDI) as allvend,SUM(NBDIMANCHE) as alldim,MAX(NBDIMANCHE) AS MAXDIM ,MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS WHERE NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
 		int maxdim = 0;
+		done = false;
 		while(rs.next()){
 			max = rs.getInt("MAXG");
 			min = rs.getInt("MING");
@@ -1303,15 +1304,15 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 			calcval = 1;
 		}
 		JOptionPane.showMessageDialog(null, "we should have only "+calcval+" sunday by intern but at least one has "+maxdim);
-		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBDIMANCHE < "+calcval+" and NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
+		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBDIMANCHE < "+calcval+" and NUMERO NOT IN (SELECT NUMERO FROM OPTIONS) order by NBSAMEDI ASC");
 		while(rs2.next()){
 			JOptionPane.showMessageDialog(null, rs2.getString("NOM")+" a seulement "+rs2.getInt("NBDIMANCHE")+" "+"dimanche");
-			rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBDIMANCHE = "+maxdim+" AND NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
+			rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBDIMANCHE = "+maxdim+" AND NUMERO NOT IN (SELECT NUMERO FROM OPTIONS) order by NBSAMEDI DESC");
 			while(rs.next()){
 				JOptionPane.showMessageDialog(null, rs.getString("NOM")+" par contre a "+rs.getInt("NBDIMANCHE")+" dimanche");
 				if(!interieur){
 
-					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO"))+" and MANUALLY_SET = FALSE AND DAYOFWEEK(JOUR) <> 1");
+					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO"))+" and MANUALLY_SET = FALSE AND DAYOFWEEK(JOUR) = 1");
 					while(rs4.next()){
 						dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
 						rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
@@ -1330,17 +1331,33 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 							while(rs6.next()){
 								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
 								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));								
-								JOptionPane.showMessageDialog(null,"giving a sunday to someone in need of it");
+								JOptionPane.showMessageDialog(null,rs.getString("NOM")+" gives a "+dowtoinc+" to "+rs2.getString("NOM"));
+								done = true;
 							}
-							break;
+							if(done){
+								break;
+							}
+							else{
+								JOptionPane.showMessageDialog(null, "cycling inside, since it was not ok");
+							}
 						}
 						
 					}
+					if(done){
 						break;
+					}
+					else{
+						JOptionPane.showMessageDialog(null, "cycling those who have two, since it was not ok");
+					}
 				
 				}
 			}
-			break;
+			if(done){
+				break;
+			}
+			else{
+				JOptionPane.showMessageDialog(null, "cycling those who have two, since it was not ok");
+			}
 		}
 		equilibrer(c,interieur,repos);
 	}
