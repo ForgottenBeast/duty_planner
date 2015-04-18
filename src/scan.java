@@ -89,7 +89,7 @@ public class scan {
 			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR Date primary key,URGENCES INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO),MANUALLY_SET BOOLEAN default FALSE)");
 		 }
 		 else {
-			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR Date PRIMARY KEY,URGENCES INTEGER,INTERIEUR INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO), FOREIGN KEY (interieur) REFERENCES MEDECINS(NUMERO),MANUALLY_SET BOOLEAN default FALSE)");///<tableau de garde final
+			 rs = mystatement.executeUpdate("CREATE TABLE GARDES(JOUR Date PRIMARY KEY,URGENCES INTEGER,INTERIEUR INTEGER, FOREIGN KEY (URGENCES) REFERENCES MEDECINS(NUMERO), FOREIGN KEY (interieur) REFERENCES MEDECINS(NUMERO),MANUALLY_SET BOOLEAN default FALSE,MANUALLY_SETINT BOOLEAN DEFAULT FALSE)");///<tableau de garde final
 		 }
 		 return hasint;
 	}
@@ -270,7 +270,7 @@ while(rs2.next()){
 		monpack.upto = nextday(monpack.upto);
 	 }
 	 monpack.goal = tosql(dc2.getDate());
-	equilibrer(c,hasint,repos);
+	//equilibrer(c,hasint,repos);
 	 return monpack;
  }
  
@@ -657,15 +657,30 @@ public static void dorecord(datepack monpack,Connection c,boolean interieur,bool
 	 rs = ms.executeUpdate("update MEDECINS set ".concat(monpack.garde.dowtoinc).concat(" = ").concat(Integer.toString(monpack.garde.newdowcount)).concat("where NUMERO = ").concat(Integer.toString(monpack.garde.nmed)));
 	 rs=ms.executeUpdate("UPDATE MEDECINS set NBGARDES = ".concat(Integer.toString(monpack.garde.curgarde)).concat("WHERE NUMERO = ").concat(Integer.toString(monpack.garde.nmed)));
 	 if(hasint){
-	 if(!interieur){
-		 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
+		 if(!interieur){
+			 if(!monpack.garde.ferie){
+				 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
+			 }
+			 else{
+				 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+" MANUALLY_SET = TRUE WHERE JOUR = '"+sqldate+"'");
+			 }
+	 	}
+	 	else{
+	 		if(!monpack.garde.ferie){
+	 			rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,INTERIEUR,MANUALLY_SETINT) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(",TRUE)"));
+	 		}
+	 		else{
+	 			rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,INTERIEUR) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
+	 		}
+	 	}
 	 }
 	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,INTERIEUR) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
-	 }
-	 }
-	 else{
-		 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
+		 if(!monpack.garde.ferie){
+			 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
+		 }
+		 else{
+			 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES,MANUALLY_SET) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(",TRUE)"));
+		 }
 	 }
  }
 
