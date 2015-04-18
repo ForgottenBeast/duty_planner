@@ -1267,15 +1267,81 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
 								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));								
 							}
+							if((!(isgood == null) && isgood.gtg)||done == true){
+								
+								break;
+							}
+						}
+						
+					}
+					if((!(isgood == null) && isgood.gtg)||done == true){
+						
+						break;
+					}
+				}
+			}
+			if((!(isgood == null) && isgood.gtg)||done == true){
+				
+				break;
+			}
+		}	
+		rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds,SUM(NBVENDREDI) as allvend,SUM(NBDIMANCHE) as alldim,MAX(NBDIMANCHE) AS MAXDIM ,MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS WHERE NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
+		int maxdim = 0;
+		while(rs.next()){
+			max = rs.getInt("MAXG");
+			min = rs.getInt("MING");
+			nbsamedi = rs.getInt("ALLSAMS");
+			nbvendredi = rs.getInt("allvend");
+			nbdimanche = rs.getInt("alldim");
+			nbjeudi = rs.getInt("allthu");
+			totgardes = rs.getInt("TOTGARDES");
+			nbmeds = rs.getInt("nbmeds");
+			maxdim = rs.getInt("MAXDIM");
+			}
+		calcval = nbdimanche/nbmeds;
+		if(calcval == 0){
+			calcval = 1;
+		}
+		JOptionPane.showMessageDialog(null, "we should have only "+calcval+" sunday by intern but at least one has "+maxdim);
+		rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBDIMANCHE < "+calcval+" and NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
+		while(rs2.next()){
+			JOptionPane.showMessageDialog(null, rs2.getString("NOM")+" a seulement "+rs2.getInt("NBDIMANCHE")+" "+"dimanche");
+			rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS WHERE NBDIMANCHE = "+maxdim+" AND NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
+			while(rs.next()){
+				JOptionPane.showMessageDialog(null, rs.getString("NOM")+" par contre a "+rs.getInt("NBDIMANCHE")+" dimanche");
+				if(!interieur){
+
+					rs4 = ms4.executeQuery("SELECT JOUR FROM GARDES WHERE URGENCES = "+Integer.toString(rs.getInt("NUMERO"))+" and MANUALLY_SET = FALSE AND DAYOFWEEK(JOUR) <> 1");
+					while(rs4.next()){
+						dowtoinc = getdow(fromsql(rs4.getDate("JOUR")));
+						rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+rs4.getDate("JOUR")+"'");
+						while(rs5.next()){
+							curg = rs5.getInt("SERVICE");
+						}
+						rs5 = ms5.executeQuery("SELECT M.SERVICE AS SERVICE FROM MEDECINS AS M INNER JOIN GARDES AS G ON M.NUMERO = G.URGENCES WHERE G.JOUR = '"+prevday(rs4.getDate("JOUR"))+"'");
+						while(rs5.next()){
+							prevurg = rs5.getInt("SERVICE");
+						}
+						isgood = isgtg(curg,666,prevurg,c,rs4.getDate("JOUR"),rs2,dowtoinc,interieur,repos,true);
+						if(isgood.gtg){
+							
+							action = m6.executeUpdate("UPDATE GARDES SET URGENCES = "+rs2.getInt("NUMERO")+", MANUALLY_SET = TRUE WHERE JOUR = '"+rs4.getDate("JOUR")+"'");
+							rs6 = m6.executeQuery("SELECT "+dowtoinc+", NBGARDES, NUMERO FROM MEDECINS WHERE NUMERO = "+rs2.getInt("NUMERO"));
+							while(rs6.next()){
+								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs6.getInt(dowtoinc)+1)+", NBGARDES = "+Integer.toString(rs6.getInt("NBGARDES")+1)+"WHERE NUMERO = "+rs6.getInt("NUMERO"));
+								action = m7.executeUpdate("UPDATE MEDECINS SET "+dowtoinc+" = "+Integer.toString(rs.getInt(dowtoinc)-1)+", NBGARDES = "+Integer.toString(rs.getInt("NBGARDES")-1)+"WHERE NUMERO = "+rs.getInt("NUMERO"));								
+								JOptionPane.showMessageDialog(null,"giving a sunday to someone in need of it");
+							}
 							break;
 						}
 						
 					}
 						break;
+				
 				}
 			}
 			break;
-		}	
+		}
 		equilibrer(c,interieur,repos);
 	}
 
