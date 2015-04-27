@@ -544,7 +544,6 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 	 Statement ms2 = c.createStatement();
 	 Statement ms = c.createStatement();
 	 int nextint = 0;
-	 String terror = null;
 	 boolean ferie = false;
 	 datepack res = new datepack();
 	 res.upto = monpack.upto;
@@ -584,8 +583,7 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 			 }
 		 }
 		 else{
-
-			 rs=ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE, M.NBGARDES as NBGARDES, M.".concat(dowtoinc).concat(", M.NBJEUDI, M.NBVENDREDI, M.NBSAMEDI, M.NBDIMANCHE, M.NBFERIES, M.SERVICE FROM (MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND M.SERVICE <> "+prevurg+" AND M.SERVICE <> "+prevint+" AND M.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+			 			 rs=ms.executeQuery("SELECT MED.NUMERO as NUMERO, MED.DERNIEREGARDE, MED.NBGARDES as NBGARDES, MED."+dowtoinc+", MED.NBJEUDI, MED.NBVENDREDI, MED.NBSAMEDI, MED.NBDIMANCHE, MED.NBFERIES, MED.SERVICE FROM (MEDECINS AS MED INNER JOIN SERVICES AS S ON MED.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND MED.SERVICE <> "+prevurg+" AND MED.SERVICE <> "+prevint+" AND MED.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, MED."+dowtoinc+" ASC, MED.DERNIEREGARDE ASC");
 			} 
 		 while(rs.next()){
 			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||((rs.getInt("SERVICE") == nextint))&& hasint){
@@ -613,10 +611,11 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 						return res;
 					 }
 					 else{
-						 terror = isgood.error;
+						 res.error = isgood.error;
 					 }
 				 }	 
-		 res.error = terror;
+
+		 JOptionPane.showMessageDialog(null, "error = "+res.error);
 	res.garde.medundefined = true;		 
 	 return res;
 		 }
