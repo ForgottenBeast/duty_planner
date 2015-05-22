@@ -270,7 +270,13 @@ while(rs2.next()){
 		monpack.upto = nextday(monpack.upto);
 	 }
 	 monpack.goal = tosql(dc2.getDate());
-	equilibrer(c,hasint,repos);
+	if(hasint){
+		equilibrer(c,true,repos);
+		equilibrer(c,false,repos);
+	}
+	else{
+		equilibrer(c,false,repos);
+	}
 	 return monpack;
  }
  
@@ -419,6 +425,7 @@ while(rs2.next()){
 	 }
 	 rs2=ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs2.next()){
+
 		 if((curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))) || ((curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0) || (curdat.compareTo(rs2.getDate("DATEFIN"))==0))){
 			 res.gtg = false;
 			 res.error = "pendant les vacances";
@@ -432,6 +439,7 @@ while(rs2.next()){
 		 nbdays = nbdays*(-1);
 	 }
 	 while(rs3.next()){
+
          int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
          if(daysbf < 0){
                  daysbf = daysbf*(-1);
@@ -459,6 +467,7 @@ while(rs2.next()){
 			 rs5 = ms5.executeQuery("SELECT JOUR FROM GARDES WHERE INTERIEUR = "+Integer.toString(rs.getInt("NUMERO")));
 		 }
 		 while(rs5.next()){
+
 			 if(prevdat != curdat){
 				 if(Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
 					 res.gtg = res.gtg && true;
@@ -494,6 +503,7 @@ while(rs2.next()){
 		if(inoptions){
 			rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 			while(rs4.next()){
+
 			bftest = res.gtg;
 			res.gtg = res.gtg && (rs.getInt("NBGARDES") < rs4.getInt("NBTOTAL")) && (nbdays > repos);
 			if(bftest && !res.gtg){
@@ -583,9 +593,11 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 			 }
 		 }
 		 else{
-			 			 rs=ms.executeQuery("SELECT MED.NUMERO as NUMERO, MED.DERNIEREGARDE, MED.NBGARDES as NBGARDES, MED."+dowtoinc+", MED.NBJEUDI, MED.NBVENDREDI, MED.NBSAMEDI, MED.NBDIMANCHE, MED.NBFERIES, MED.SERVICE FROM (MEDECINS AS MED INNER JOIN SERVICES AS S ON MED.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND MED.SERVICE <> "+prevurg+" AND MED.SERVICE <> "+prevint+" AND MED.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, MED."+dowtoinc+" ASC, MED.DERNIEREGARDE ASC");
+			 
+			 			 rs=ms.executeQuery("SELECT MED.NUMERO as NUMERO,MED.NOM as NOM, MED.DERNIEREGARDE, MED.NBGARDES as NBGARDES, MED."+dowtoinc+", MED.NBJEUDI, MED.NBVENDREDI, MED.NBSAMEDI, MED.NBDIMANCHE, MED.NBFERIES, MED.SERVICE FROM (MEDECINS AS MED INNER JOIN SERVICES AS S ON MED.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND MED.SERVICE <> "+prevurg+" AND MED.SERVICE <> "+prevint+" AND MED.SERVICE <> "+nextint+" ORDER BY NBGARDES ASC, MED."+dowtoinc+" ASC, MED.DERNIEREGARDE ASC");
 			} 
 		 while(rs.next()){
+
 			 		 if((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint)||(interieur && (rs.getInt("SERVICE") == curg))||((rs.getInt("SERVICE") == nextint))&& hasint){
 			 			 continue;
 			 		 }
@@ -612,10 +624,9 @@ public static datepack selecttoubib(datepack monpack,boolean hasint,int repos, i
 					 }
 					 else{
 						 res.error = isgood.error;
-					 }
+						 }
 				 }	 
 
-		 JOptionPane.showMessageDialog(null, "error = "+res.error);
 	res.garde.medundefined = true;		 
 	 return res;
 		 }
@@ -661,7 +672,7 @@ public static void dorecord(datepack monpack,Connection c,boolean interieur,bool
 				 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+" WHERE JOUR = '"+sqldate+"'");
 			 }
 			 else{
-				 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+" MANUALLY_SET = TRUE WHERE JOUR = '"+sqldate+"'");
+				 rs = ms.executeUpdate("UPDATE GARDES SET URGENCES = ".concat(Integer.toString(monpack.garde.nmed))+", MANUALLY_SET = TRUE WHERE JOUR = '"+sqldate+"'");
 			 }
 	 	}
 	 	else{
@@ -940,7 +951,7 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	boolean done = false;
 	String secteur = "URGENCES";
 	int action,max = 0,min = 0,totgardes = 0,nbjour = 0;
-	rs = ms.executeQuery("SELECT COUNT(NUMERO) as nbmeds,SUM(NBVENDREDI) as allvend,SUM(NBDIMANCHE) as alldim, MAX(NBGARDES) as MAXG,MIN(NBGARDES) as MING,SUM(NBSAMEDI) as ALLSAMS,SUM(NBJEUDI) as allthu,SUM(NBGARDES) as TOTGARDES FROM MEDECINS WHERE NUMERO NOT IN (SELECT NUMERO FROM OPTIONS)");
+	rs = ms.executeQuery("SELECT COUNT(M.NUMERO) as nbmeds,SUM(M.NBVENDREDI) as allvend,SUM(M.NBDIMANCHE) as alldim, MAX(M.NBGARDES) as MAXG,MIN(M.NBGARDES) as MING,SUM(M.NBSAMEDI) as ALLSAMS,SUM(M.NBJEUDI) as allthu,SUM(M.NBGARDES) as TOTGARDES FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE M.NUMERO NOT IN (SELECT NUMERO FROM OPTIONS) AND S.INTERIEUR = "+interieur);
 	while(rs.next()){
 		max = rs.getInt("MAXG");
 		min = rs.getInt("MING");
@@ -969,14 +980,14 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 	 }
 
 	 if(i == 0){
-		 rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,DERNIEREGARDE,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE "+dowtoinc+" < "+Integer.toString(calcval)+" and NBSAMEDI_EQUILIBRE = FALSE");
+			 rs2 = ms2.executeQuery("SELECT M.NUMERO as NUMERO,M.NBGARDES as NBGARDES,M.NOM AS NOM,M.NBLUNDI AS NBLUNDI,M.DERNIEREGARDE AS DERNIEREGARDE,M.NBMARDI AS NBMARDI,M.NBMERCREDI AS NBMERCREDI,M.NBJEUDI AS NBJEUDI,M.NBVENDREDI AS NBVENDREDI,M.NBSAMEDI AS NBSAMEDI,M.NBDIMANCHE AS NBDIMANCHE,M.NBFERIES AS NBFERIES,M.SERVICE AS SERVICE FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE M.NUMERO NOT IN (SELECT NUMERO FROM OPTIONS) AND M."+dowtoinc+" < "+Integer.toString(calcval)+" and M.NBSAMEDI_EQUILIBRE = FALSE and S.INTERIEUR = "+interieur);
 	 }
 	 else{
-		 rs2 = ms2.executeQuery("SELECT NUMERO,NBGARDES,NOM,NBLUNDI,DERNIEREGARDE,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE "+dowtoinc+" < "+Integer.toString(calcval)+" and NBJEUDI_EQUILIBRE = FALSE");
+		 rs2 = ms2.executeQuery("SELECT M.NUMERO as NUMERO,M.NBGARDES as NBGARDES,M.NOM AS NOM,M.NBLUNDI AS NBLUNDI,M.DERNIEREGARDE AS DERNIEREGARDE,M.NBMARDI AS NBMARDI,M.NBMERCREDI AS NBMERCREDI,M.NBJEUDI AS NBJEUDI,M.NBVENDREDI AS NBVENDREDI,M.NBSAMEDI AS NBSAMEDI,M.NBDIMANCHE AS NBDIMANCHE,M.NBFERIES AS NBFERIES,M.SERVICE AS SERVICE FROM MEDECINS as M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE M.NUMERO NOT IN (SELECT NUMERO FROM OPTIONS) AND M."+dowtoinc+" < "+Integer.toString(calcval)+" and M.NBJEUDI_EQUILIBRE = FALSE and S.INTERIEUR = "+interieur);
 	 }
 	 while(rs2.next()){
 
-		rs = ms.executeQuery("SELECT NUMERO,NBGARDES,NOM,DERNIEREGARDE,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES,SERVICE FROM MEDECINS INNER JOIN(SELECT NUMERO FROM MEDECINS EXCEPT SELECT NUMERO FROM OPTIONS) AS M2 ON MEDECINS.NUMERO = M2.NUMERO WHERE "+dowtoinc+" > "+Integer.toString(calcval));
+		rs = ms.executeQuery("SELECT M.NUMERO as NUMERO,M.NBGARDES AS NBGARDES,M.NOM AS NOM,M.DERNIEREGARDE AS DERNIEREGARDE,M.NBLUNDI AS NBLUNDI,M.NBMARDI AS NBMARDI,M.NBMERCREDI AS NBMERCREDI,M.NBJEUDI AS NBJEUDI,M.NBVENDREDI AS NBVENDREDI,M.NBSAMEDI AS NBSAMEDI,M.NBDIMANCHE AS NBDIMANCHE,M.NBFERIES AS NBFERIES,M.SERVICE AS SERVICES FROM MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE M.NUMERO NOT IN (SELECT NUMERO FROM OPTIONS) AND M."+dowtoinc+" > "+Integer.toString(calcval)+"AND S.INTERIEUR = "+interieur);
 		done = false;
 		while(rs.next()){
 			
@@ -1422,11 +1433,10 @@ public static void equilibrer(Connection c,boolean interieur,int repos) throws S
 			if(done){
 				break;
 			}
-			else{
-
-			}
 		}
+		if(done){
 		equilibrer(c,interieur,repos);
+		}
 	}
 
 }
