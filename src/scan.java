@@ -160,10 +160,91 @@ public class scan {
 	    		 ms.addCell(l);
 	    		 l = new Label(1,0,"date fin");
 	    		 ms.addCell(l);
-	    		 l = new Label(0,1,(String) myEntries.get(i+1));
+	    		 i++;
+	    		 l = new Label(0,1,(String) myEntries.get(i));
 	    		 ms.addCell(l);
-	    		 l = new Label(1,1,(String) myEntries.get(i+1));
+	    		 i++;
+	    		 l = new Label(1,1,(String) myEntries.get(i));
 	    		 ms.addCell(l);
+	    		 continue;
+	    	 }
+	    	 else if(myEntries.get(i) == "<services>"){
+	    		 ms = workbook.createSheet("services", 4);
+	    		 l = new Label(0,0,"nom");
+	    		 ms.addCell(l);
+	    		 l = new Label(1,0,"interieur");
+	    		 ms.addCell(l);
+	    		 l = new Label(2,0,"repos");
+	    		 for(int j = i+1; j < myEntries.size();j+=3){
+	    			 if(myEntries.get(j) == "</services>"){
+	    				 i = j;
+	    				 k = 1;
+	    				 break;
+	    			 }
+	    			 else{
+	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 ms.addCell(l);
+	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ms.addCell(l);
+	    				 l = new Label(2,k,(String) myEntries.get(j+2));
+	    				 ms.addCell(l);
+	    				 k++;
+	    			 }
+	    		 }
+	    		 continue;
+	    	 }
+	    	 else if(myEntries.get(i) == "<options>"){
+	    		 ms = workbook.createSheet("options", 5);
+	    		 l = new Label(0,0,"nom");
+	    		 ms.addCell(l);
+	    		 l = new Label(1,0,"nbgardestotal");
+	    		 ms.addCell(l);
+	    		 l = new Label(2,0,"nblundi");
+	    		 ms.addCell(l);
+	    		 l = new Label(3,0,"nbmardi");
+	    		 ms.addCell(l);
+	    		 l = new Label(4,0,"nbmercredi");
+	    		 ms.addCell(l);
+	    		 l = new Label(5,0,"nbjeudi");
+	    		 ms.addCell(l);
+	    		 l = new Label(6,0,"nbvendredi");
+	    		 ms.addCell(l);
+	    		 l = new Label(7,0,"nbsamedi");
+	    		 ms.addCell(l);
+	    		 l = new Label(8,0,"nbdimanche");
+	    		 ms.addCell(l);
+	    		 l = new Label(9,0,"nbferies");
+	    		 ms.addCell(l);
+	    		 for(int j = i+1; j < myEntries.size();j+=10){
+	    			 if(myEntries.get(j) == "</options>"){
+	    				 i = j;
+	    				 k = 1;
+	    				 break;
+	    			 }
+	    			 else{
+	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 ms.addCell(l);
+	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ms.addCell(l);
+	    				 l = new Label(2,k,(String) myEntries.get(j+2));
+	    				 ms.addCell(l);
+	    				 l = new Label(3,k,(String) myEntries.get(j+3));
+	    				 ms.addCell(l);
+	    				 l = new Label(4,k,(String) myEntries.get(j+4));
+	    				 ms.addCell(l);
+	    				 l = new Label(5,k,(String) myEntries.get(j+5));
+	    				 ms.addCell(l);
+	    				 l = new Label(6,k,(String) myEntries.get(j+6));
+	    				 ms.addCell(l);
+	    				 l = new Label(7,k,(String) myEntries.get(j+7));
+	    				 ms.addCell(l);
+	    				 l = new Label(8,k,(String) myEntries.get(j+8));
+	    				 ms.addCell(l);
+	    				 l = new Label(9,k,(String) myEntries.get(j+9));
+	    				 ms.addCell(l);
+	    				 k++;
+	    			 }
+	    		 }
 	    		 continue;
 	    	 }
 	     }
