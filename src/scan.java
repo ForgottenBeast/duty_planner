@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.io.BufferedReader;
 import java.io.File; 
 import java.io.FileNotFoundException;
@@ -53,7 +54,7 @@ public class scan {
 		
 		Workbook data;
 		
-			data = Workbook.getWorkbook(new File("data.xls"));
+			data = Workbook.getWorkbook(new File(args[0]+".xls"));
 
 		 WritableWorkbook workbook = Workbook.createWorkbook(new File("planning_garde.xls"));
 		 
@@ -70,7 +71,7 @@ public class scan {
 		
 	}
 	
-	public static void reencode(String[] args) throws IOException, RowsExceededException, WriteException{
+	public static void reencode(String[] args) throws IOException, RowsExceededException, WriteException, ParseException{
 		//http://howtodoinjava.com/2014/08/12/parse-read-write-csv-files-opencsv-tutorial/
 
 		
@@ -81,12 +82,14 @@ public class scan {
 int k = 1;
 
 		Label l; 
-		 CSVReader reader = new CSVReader(new FileReader(fpath));
+		 Calendar cal = Calendar.getInstance();
+	 CSVReader reader = new CSVReader(new FileReader(fpath));
 	     List<String[]> myEntries = reader.readAll();
 	     WritableSheet ms = workbook.createSheet("medecins",0);
 	     ;
-
-
+	     WritableCell dt;
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		WritableCellFormat cf1=new WritableCellFormat(DateFormats.FORMAT9);
 	     for(int i = 0; i < myEntries.size();i++){
 	    	
 	    	 if(myEntries.get(i)[0].equals("<medecins>")){
@@ -115,8 +118,10 @@ int k = 1;
 	    				l = new Label(1,k,myEntries.get(j+1)[0]);
 	    				 ms.addCell(l);
 	    				 ;
-	    				l = new Label(2,k,(String) myEntries.get(j+2)[0]);
-	    				 ms.addCell(l);
+	    				 cal.setTime(formatter.parse(myEntries.get(j+2)[0]));
+	    					dt = new jxl.write.DateTime(2,k,new Date(cal.getTimeInMillis()),cf1);
+	    					ms.addCell(dt);	
+	    
 	    				 ;
 	    				 k++;
 	    			 }
@@ -132,7 +137,8 @@ int k = 1;
 	    		 l = new Label(1,0,"nom");
 	    		 ms.addCell(l);
 	    		 ;
-	    		 
+	    		 l = new Label(2,0,"interieur");
+	    		 ms.addCell(l);
 	    		 for(int j = i+1; j < myEntries.size();j+=3){
 	    			 if(myEntries.get(j)[0].equals("</feries>")){
 	    				 i = j;
@@ -141,11 +147,17 @@ int k = 1;
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,myEntries.get(j)[0]);
-	    				 ms.addCell(l);
+	    				 cal.setTime(formatter.parse(myEntries.get(j)[0]));
+	    					dt = new jxl.write.DateTime(0,k,new Date(cal.getTimeInMillis()),cf1);
+	    					ms.addCell(dt);	
 	    				 ;
 	    				 l = new Label(1,k,myEntries.get(j+1)[0]);
 	    				 ms.addCell(l);
+	    				 if(myEntries.get(j+2)[0].equals("true")){
+	    					 l = new Label(2,k,myEntries.get(j+2)[0]);
+	    					 ms.addCell(l);
+	    				 }
+	    			
 	    				 ;
 	    				 k++;
 	    				 
@@ -172,12 +184,13 @@ int k = 1;
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,myEntries.get(j)[0]);
-	    				 ms.addCell(l);
+	    				 cal.setTime(formatter.parse(myEntries.get(j)[0]));
+	    					dt = new jxl.write.DateTime(0,k,new Date(cal.getTimeInMillis()),cf1);
+	    					ms.addCell(dt);	
 	    				 ;
-	    				 l = new Label(1,k,myEntries.get(j+1)[0]);
-	    				 ms.addCell(l);
-	    				 ;
+	    				 cal.setTime(formatter.parse(myEntries.get(j+1)[0]));
+	    					dt = new jxl.write.DateTime(1,k,new Date(cal.getTimeInMillis()),cf1);
+	    					ms.addCell(dt);	
 	    				 l = new Label(2,k,(String) myEntries.get(j+2)[0]);
 	    				 ms.addCell(l);
 	    				 ;
@@ -195,12 +208,14 @@ int k = 1;
 	    		 ms.addCell(l);
 	    		 ;
 	    		 i++;
-	    		 l = new Label(0,1,myEntries.get(i)[0]);
-	    		 ms.addCell(l);
+	    		 cal.setTime(formatter.parse(myEntries.get(i)[0]));
+					dt = new jxl.write.DateTime(0,1,new Date(cal.getTimeInMillis()),cf1);
+					ms.addCell(dt);	
 	    		 ;
 	    		 i++;
-	    		 l = new Label(1,1,myEntries.get(i)[0]);
-	    		 ms.addCell(l);
+	    		 cal.setTime(formatter.parse(myEntries.get(i)[0]));
+					dt = new jxl.write.DateTime(1,1,new Date(cal.getTimeInMillis()),cf1);
+					ms.addCell(dt);	
 	    		 ;
 	    		 continue;
 	    	 }
@@ -226,7 +241,7 @@ int k = 1;
 	    				 l = new Label(0,k,myEntries.get(j)[0]);
 	    				 ms.addCell(l);
 	    				 ;
-	    				 if(!myEntries.get(j+1)[0].equals("false")){
+	    				 if(myEntries.get(j+1)[0].equals("true")){
 	    					l = new Label(1,k,myEntries.get(j+1)[0]);
 	    				 	ms.addCell(l);
 	    				 }
@@ -421,6 +436,7 @@ while(rs2.next()){
 	
 	sheet = data.getSheet(1);
 	for (int i = 1; i < sheet.getRows();i++){
+	
 		if(sheet.getCell(0,i).getCellFormat() != null && sheet.getCell(0,i).getContents().length() != 0){
 		DateCell dc = (DateCell)sheet.getCell(0,i);
 		dc = (DateCell) sheet.getCell(0,i);
