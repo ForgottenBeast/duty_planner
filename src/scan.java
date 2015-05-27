@@ -102,6 +102,7 @@ public class scan {
 	    				 k++;
 	    			 }
 	    		 }
+	    		 continue;
 	    	 }
 	    	 else if(myEntries.get(i) == "<feries>"){
 	    		 ms = workbook.createSheet("jours feries", 1);
@@ -113,7 +114,7 @@ public class scan {
 	    		 for(int j = i+1; j < myEntries.size();j+=2){
 	    			 if(myEntries.get(j) == "</feries>"){
 	    				 i = j;
-	    				 k = 0;
+	    				 k = 1;
 	    				 break;
 	    			 }
 	    			 else{
@@ -125,9 +126,45 @@ public class scan {
 	    				 
 	    			 }
 	    		 }
+	    		 continue;
 	    	 }
 	    	 else if(myEntries.get(i) == "<vacances>"){
-	    		 
+	    		 ms = workbook.createSheet("vacances",2);
+	    		 l = new Label(0,0,"date debut");
+	    		 ms.addCell(l);
+	    		 l = new Label(1,0,"date fin");
+	    		 ms.addCell(l);
+	    		 l = new Label(2,0,"nom");
+	    		 ms.addCell(l);
+	    		 for(int j = i+i; j < myEntries.size();j+=3){
+	    			 if(myEntries.get(j) == "</vacances>"){
+	    				 i = j;
+	    				 k = 1;
+	    				 break;
+	    			 }
+	    			 else{
+	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 ms.addCell(l);
+	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ms.addCell(l);
+	    				 l = new Label(2,k,(String) myEntries.get(j+2));
+	    				 ms.addCell(l);
+	    				 k++;
+	    			 }
+	    		 }
+	    		 continue;
+	    	 }
+	    	 else if(myEntries.get(i) == "<info>"){
+	    		 ms = workbook.createSheet("informations generales", 3);
+	    		 l = new Label(0,0,"date debut");
+	    		 ms.addCell(l);
+	    		 l = new Label(1,0,"date fin");
+	    		 ms.addCell(l);
+	    		 l = new Label(0,1,(String) myEntries.get(i+1));
+	    		 ms.addCell(l);
+	    		 l = new Label(1,1,(String) myEntries.get(i+1));
+	    		 ms.addCell(l);
+	    		 continue;
 	    	 }
 	     }
 	}
