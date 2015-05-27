@@ -1,13 +1,18 @@
+import java.nio.charset.Charset;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
+import java.io.BufferedReader;
 import java.io.File; 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date; 
+import java.util.List;
 
 import javax.swing.JOptionPane;
 
@@ -15,6 +20,8 @@ import javax.swing.JOptionPane;
 
 import org.joda.time.*;
 import org.joda.time.DateTime;
+
+import com.opencsv.CSVReader;
 
 import jxl.*;
 import jxl.read.biff.BiffException;
@@ -37,6 +44,8 @@ public class scan {
 	 * @throws ParseException 
 	 */
 	public static void main(String[] args) throws SQLException, IOException, BiffException, RowsExceededException, WriteException, ParseException {
+
+		reencode(args);
 		Connection c ;
 
 			 c = DriverManager.getConnection("jdbc:hsqldb:mem:gardedb", "SA", "");
@@ -58,6 +67,69 @@ public class scan {
 		 
 		 writeoutput(monpack,c,workbook,hasint,data);
 		
+	}
+	
+	public static void reencode(String[] args) throws IOException, RowsExceededException, WriteException{
+		String fpath = "/home/urist/appfiles/"+args[0];
+		WritableWorkbook workbook = Workbook.createWorkbook(new File("data"+args[0]+".xls"));
+		JOptionPane.showMessageDialog(null, fpath);
+		int k = 1;
+		Label l; 
+		 CSVReader reader = new CSVReader(new FileReader(fpath));
+	     List myEntries = reader.readAll();
+	     WritableSheet ms = workbook.createSheet("medecins",0);
+	     for(int i = 0; i < myEntries.size();i++){
+	    	 if(myEntries.get(i) == "<medecin>"){
+	    		 l = new Label(0,0,"medecin");
+	    		 ms.addCell(l);
+	    		 l = new Label(1,0,"service");
+	    		 ms.addCell(l);
+	    		 l = new Label(2,0,"derniere garde");
+	    		 ms.addCell(l);
+	    		 for(int j = i+1; j < myEntries.size();j+=3){
+	    			 if(myEntries.get(j) == "</medecin>"){
+	    				 i = j;
+	    				 k = 1;
+	    				 break;
+	    			 }
+	    			 else{
+	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 ms.addCell(l);
+	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ms.addCell(l);
+	    				 l = new Label(1,k,(String) myEntries.get(j+2));
+	    				 ms.addCell(l);
+	    				 k++;
+	    			 }
+	    		 }
+	    	 }
+	    	 else if(myEntries.get(i) == "<feries>"){
+	    		 ms = workbook.createSheet("jours feries", 1);
+	    		 l = new Label(0,0,"date");
+	    		 ms.addCell(l);
+	    		 l = new Label(1,0,"nom");
+	    		 ms.addCell(l);
+	    		 
+	    		 for(int j = i+1; j < myEntries.size();j+=2){
+	    			 if(myEntries.get(j) == "</feries>"){
+	    				 i = j;
+	    				 k = 0;
+	    				 break;
+	    			 }
+	    			 else{
+	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 ms.addCell(l);
+	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ms.addCell(l);
+	    				 k++;
+	    				 
+	    			 }
+	    		 }
+	    	 }
+	    	 else if(myEntries.get(i) == "<vacances>"){
+	    		 
+	    	 }
+	     }
 	}
 	
 	/** methode qui remplis la base de données avec les tables nécessaires*/
