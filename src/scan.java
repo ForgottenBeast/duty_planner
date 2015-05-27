@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.File; 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date; 
 import java.util.List;
@@ -70,184 +71,256 @@ public class scan {
 	}
 	
 	public static void reencode(String[] args) throws IOException, RowsExceededException, WriteException{
-		String fpath = "/home/urist/appfiles/"+args[0];
-		WritableWorkbook workbook = Workbook.createWorkbook(new File("data"+args[0]+".xls"));
-		JOptionPane.showMessageDialog(null, fpath);
-		int k = 1;
+		//http://howtodoinjava.com/2014/08/12/parse-read-write-csv-files-opencsv-tutorial/
+
+		
+		
+		
+		String fpath = args[0];
+		WritableWorkbook workbook = Workbook.createWorkbook(new File(args[0]+".xls"));
+int k = 1;
+
 		Label l; 
 		 CSVReader reader = new CSVReader(new FileReader(fpath));
-	     List myEntries = reader.readAll();
+	     List<String[]> myEntries = reader.readAll();
 	     WritableSheet ms = workbook.createSheet("medecins",0);
+	     ;
+
+
 	     for(int i = 0; i < myEntries.size();i++){
-	    	 if(myEntries.get(i) == "<medecin>"){
+	    	
+	    	 if(myEntries.get(i)[0].equals("<medecins>")){
+	    	
 	    		 l = new Label(0,0,"medecin");
 	    		 ms.addCell(l);
+	    		;
 	    		 l = new Label(1,0,"service");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(2,0,"derniere garde");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 for(int j = i+1; j < myEntries.size();j+=3){
-	    			 if(myEntries.get(j) == "</medecin>"){
+	    			 if(myEntries.get(j)[0].equals("</medecins>")){
 	    				 i = j;
 	    				 k = 1;
+	    				
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    	
+	    				 l = new Label(0,k,myEntries.get(j)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ;
+	    				l = new Label(1,k,myEntries.get(j+1)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(1,k,(String) myEntries.get(j+2));
+	    				 ;
+	    				l = new Label(2,k,(String) myEntries.get(j+2)[0]);
 	    				 ms.addCell(l);
+	    				 ;
 	    				 k++;
 	    			 }
 	    		 }
 	    		 continue;
 	    	 }
-	    	 else if(myEntries.get(i) == "<feries>"){
+	    	 else if(myEntries.get(i)[0].equals("<feries>")){
+	   
 	    		 ms = workbook.createSheet("jours feries", 1);
 	    		 l = new Label(0,0,"date");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(1,0,"nom");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 
-	    		 for(int j = i+1; j < myEntries.size();j+=2){
-	    			 if(myEntries.get(j) == "</feries>"){
+	    		 for(int j = i+1; j < myEntries.size();j+=3){
+	    			 if(myEntries.get(j)[0].equals("</feries>")){
 	    				 i = j;
 	    				 k = 1;
+	    				
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 l = new Label(0,k,myEntries.get(j)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ;
+	    				 l = new Label(1,k,myEntries.get(j+1)[0]);
 	    				 ms.addCell(l);
+	    				 ;
 	    				 k++;
 	    				 
 	    			 }
 	    		 }
 	    		 continue;
 	    	 }
-	    	 else if(myEntries.get(i) == "<vacances>"){
+	    	 else if(myEntries.get(i)[0].equals("<vacances>")){
 	    		 ms = workbook.createSheet("vacances",2);
 	    		 l = new Label(0,0,"date debut");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(1,0,"date fin");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(2,0,"nom");
 	    		 ms.addCell(l);
-	    		 for(int j = i+i; j < myEntries.size();j+=3){
-	    			 if(myEntries.get(j) == "</vacances>"){
+	    		 ;
+	    		 for(int j = i+1; j < myEntries.size();j+=3){
+	    			 if(myEntries.get(j)[0].equals("</vacances>")){
 	    				 i = j;
 	    				 k = 1;
+	    			
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 l = new Label(0,k,myEntries.get(j)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ;
+	    				 l = new Label(1,k,myEntries.get(j+1)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(2,k,(String) myEntries.get(j+2));
+	    				 ;
+	    				 l = new Label(2,k,(String) myEntries.get(j+2)[0]);
 	    				 ms.addCell(l);
+	    				 ;
 	    				 k++;
 	    			 }
 	    		 }
 	    		 continue;
 	    	 }
-	    	 else if(myEntries.get(i) == "<info>"){
+	    	 else if(myEntries.get(i)[0].equals("<info>")){
 	    		 ms = workbook.createSheet("informations generales", 3);
 	    		 l = new Label(0,0,"date debut");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(1,0,"date fin");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 i++;
-	    		 l = new Label(0,1,(String) myEntries.get(i));
+	    		 l = new Label(0,1,myEntries.get(i)[0]);
 	    		 ms.addCell(l);
+	    		 ;
 	    		 i++;
-	    		 l = new Label(1,1,(String) myEntries.get(i));
+	    		 l = new Label(1,1,myEntries.get(i)[0]);
 	    		 ms.addCell(l);
+	    		 ;
 	    		 continue;
 	    	 }
-	    	 else if(myEntries.get(i) == "<services>"){
+	    	 else if(myEntries.get(i)[0].equals("<services>")){
 	    		 ms = workbook.createSheet("services", 4);
 	    		 l = new Label(0,0,"nom");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(1,0,"interieur");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(2,0,"repos");
+	    		 ms.addCell(l);
+	    		 ;
 	    		 for(int j = i+1; j < myEntries.size();j+=3){
-	    			 if(myEntries.get(j) == "</services>"){
+	    			 if(myEntries.get(j)[0].equals("</services>")){
 	    				 i = j;
 	    				 k = 1;
+	    				
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,(String) myEntries.get(j));
+	    				 l = new Label(0,k,myEntries.get(j)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ;
+	    				 if(!myEntries.get(j+1)[0].equals("false")){
+	    					l = new Label(1,k,myEntries.get(j+1)[0]);
+	    				 	ms.addCell(l);
+	    				 }
+	    				 ;
+	    				 l = new Label(2,k,(String) myEntries.get(j+2)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(2,k,(String) myEntries.get(j+2));
-	    				 ms.addCell(l);
+	    				 ;
 	    				 k++;
 	    			 }
 	    		 }
 	    		 continue;
 	    	 }
-	    	 else if(myEntries.get(i) == "<options>"){
+	    	 else if(myEntries.get(i)[0].equals("<options>")){
+	    		
 	    		 ms = workbook.createSheet("options", 5);
 	    		 l = new Label(0,0,"nom");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(1,0,"nbgardestotal");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(2,0,"nblundi");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(3,0,"nbmardi");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(4,0,"nbmercredi");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(5,0,"nbjeudi");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(6,0,"nbvendredi");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(7,0,"nbsamedi");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(8,0,"nbdimanche");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 l = new Label(9,0,"nbferies");
 	    		 ms.addCell(l);
+	    		 ;
 	    		 for(int j = i+1; j < myEntries.size();j+=10){
-	    			 if(myEntries.get(j) == "</options>"){
+	    			 if(myEntries.get(j)[0].equals("</options>")){
 	    				 i = j;
 	    				 k = 1;
+	    		
 	    				 break;
 	    			 }
 	    			 else{
-	    				 l = new Label(0,k,(String) myEntries.get(j));
+	
+	    				 l = new Label(0,k,(String) myEntries.get(j)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(1,k,(String) myEntries.get(j+1));
+	    				 ;
+	    				 l = new Label(1,k,(String) myEntries.get(j+1)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(2,k,(String) myEntries.get(j+2));
+	    				 ;
+	    				 l = new Label(2,k,(String) myEntries.get(j+2)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(3,k,(String) myEntries.get(j+3));
+	    				 ;
+	    				 l = new Label(3,k,(String) myEntries.get(j+3)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(4,k,(String) myEntries.get(j+4));
+	    				 ;
+	    				 l = new Label(4,k,(String) myEntries.get(j+4)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(5,k,(String) myEntries.get(j+5));
+	    				 ;
+	    				 l = new Label(5,k,(String) myEntries.get(j+5)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(6,k,(String) myEntries.get(j+6));
+	    				 ;
+	    				 l = new Label(6,k,(String) myEntries.get(j+6)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(7,k,(String) myEntries.get(j+7));
+	    				 ;
+	    				 l = new Label(7,k,(String) myEntries.get(j+7)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(8,k,(String) myEntries.get(j+8));
+	    				 ;
+	    				 l = new Label(8,k,(String) myEntries.get(j+8)[0]);
 	    				 ms.addCell(l);
-	    				 l = new Label(9,k,(String) myEntries.get(j+9));
+	    				 ;
+	    				 l = new Label(9,k,(String) myEntries.get(j+9)[0]);
 	    				 ms.addCell(l);
+	    				 ;
 	    				 k++;
 	    			 }
 	    		 }
 	    		 continue;
 	    	 }
+	    	
 	     }
+	     workbook.write();
+	     workbook.close();
+	    
 	}
 	
 	/** methode qui remplis la base de données avec les tables nécessaires*/
