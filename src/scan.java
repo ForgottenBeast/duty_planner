@@ -714,13 +714,15 @@ while(rs2.next()){
 			 break;
 		 }
 	 }
-	 rs3 = ms3.executeQuery("SELECT JF.JOUR,S.REPOS FROM JOURS_FERIES as JF INNER JOIN(MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) ON JF.NUMERO = M.NUMERO WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+
+	 rs3 = ms3.executeQuery("SELECT JOUR,REPOS FROM JOURS_FERIES INNER JOIN (MEDECINS INNER JOIN SERVICES ON SERVICE = SERVICES.NUMERO) ON JOURS_FERIES.NUMERO = MEDECINS.NUMERO WHERE MEDECINS.NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 int nbdays = Days.daysBetween(new org.joda.time.DateTime(rs.getDate("DERNIEREGARDE")), new org.joda.time.DateTime(curdat)).getDays();
 	 if(nbdays < 0 && equilibrage == false){
 		 nbdays = nbdays*(-1);
 	 }
 	 while(rs3.next()){
-		 repos = rs3.getInt("S.REPOS");
+		
+		 repos = rs3.getInt("REPOS");
          int daysbf = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs3.getDate("JOUR"))).getDays();
          if(daysbf < 0){
                  daysbf = daysbf*(-1);
@@ -732,11 +734,11 @@ while(rs2.next()){
          }
  }
 
-	 
 	 if(equilibrage == false){
 	bftest = res.gtg;
 	rs3 = ms3.executeQuery("SELECT REPOS FROM SERVICES AS S INNER JOIN MEDECINS AS M ON M.SERVICE = S.NUMERO WHERE M.NUMERO = "+rs.getString("NUMERO"));
 	while(rs3.next()){
+
 		repos = rs3.getInt("REPOS");
 		 res.gtg = res.gtg && ((nbdays > repos)||(nbdays < 0));
 		 if(bftest && !res.gtg){
