@@ -46,17 +46,27 @@ public class scan {
 	 * @throws ParseException 
 	 */
 	public static void main(String[] args) throws SQLException, IOException, BiffException, RowsExceededException, WriteException, ParseException {
-
-		reencode(args);
+		Workbook data;
+		 WritableWorkbook workbook;
+		if(args[0].equals("--xls")){
+			data = Workbook.getWorkbook(new File(args[1]));
+			workbook = Workbook.createWorkbook(new File(args[2]+"_planning_garde.xls"));
+		}
+		else{
+			reencode(args[0]);
+			data = Workbook.getWorkbook(new File(args[0]+"_data.xls"));
+			workbook = Workbook.createWorkbook(new File(args[0]+"_planning_garde.xls"));
+		}
 		Connection c ;
 
 			 c = DriverManager.getConnection("jdbc:hsqldb:mem:gardedb", "SA", "");
 		
-		Workbook data;
 		
-			data = Workbook.getWorkbook(new File(args[0]+".xls"));
+		
+			
 
-		 WritableWorkbook workbook = Workbook.createWorkbook(new File("planning_garde.xls"));
+		
+		 
 		 
 		 
 		 boolean hasint = setup(c,data);
@@ -67,18 +77,18 @@ public class scan {
 		 datepack monpack = genplanning(c,data,hasint);
 		
 		 
-		 writeoutput(monpack,c,workbook,hasint,data);
+		 writeoutput(monpack,c,workbook,hasint,data,args);
 		
 	}
 	
-	public static void reencode(String[] args) throws IOException, RowsExceededException, WriteException, ParseException{
+	public static void reencode(String arg) throws IOException, RowsExceededException, WriteException, ParseException{
 		//http://howtodoinjava.com/2014/08/12/parse-read-write-csv-files-opencsv-tutorial/
 
 		
 		
 		
-		String fpath = args[0];
-		WritableWorkbook workbook = Workbook.createWorkbook(new File(args[0]+".xls"));
+		String fpath = arg;
+		WritableWorkbook workbook = Workbook.createWorkbook(new File(arg+"_data.xls"));
 int k = 1;
 
 		Label l; 
@@ -284,10 +294,8 @@ int k = 1;
 	    		 l = new Label(8,0,"nbdimanche");
 	    		 ms.addCell(l);
 	    		 ;
-	    		 l = new Label(9,0,"nbferies");
-	    		 ms.addCell(l);
-	    		 ;
-	    		 for(int j = i+1; j < myEntries.size();j+=10){
+
+	    		 for(int j = i+1; j < myEntries.size();j+=9){
 	    			 if(myEntries.get(j)[0].equals("</options>")){
 	    				 i = j;
 	    				 k = 1;
@@ -323,9 +331,7 @@ int k = 1;
 	    				 l = new Label(8,k,(String) myEntries.get(j+8)[0]);
 	    				 ms.addCell(l);
 	    				 ;
-	    				 l = new Label(9,k,(String) myEntries.get(j+9)[0]);
-	    				 ms.addCell(l);
-	    				 ;
+
 	    				 k++;
 	    			 }
 	    		 }
@@ -985,12 +991,17 @@ public static void dorecord(datepack monpack,Connection c,boolean interieur,bool
 
 /**function to write to the output excel file
  * @throws BiffException */
-public static void writeoutput(datepack monpack,Connection c, WritableWorkbook output,boolean hasint,Workbook data) throws SQLException, RowsExceededException, WriteException, IOException, BiffException{
+public static void writeoutput(datepack monpack,Connection c, WritableWorkbook output,boolean hasint,Workbook data,String[] arg) throws SQLException, RowsExceededException, WriteException, IOException, BiffException{
 	writegardes(monpack,c,output,hasint);
 	writestats(c,output,hasint);
 	writegps(c,output,hasint);
 	writecalendar(c,output,hasint);
-	updatedata(c);
+	if(arg[0].equals("--xls")){
+		updatedata(c,arg[1]);
+	}
+	else{
+		updatedata(c,arg[0]+"_data.xls");
+	}
 	output.write();	
 	output.close();
 }
@@ -1167,11 +1178,11 @@ public static void writecalendar(Connection c, WritableWorkbook output,boolean h
 
 /**update the input excel file with informations such as last shift done
  * @throws BiffException */
-public static void updatedata(Connection c) throws SQLException, IOException, RowsExceededException, WriteException, BiffException{
+public static void updatedata(Connection c, String filename) throws SQLException, IOException, RowsExceededException, WriteException, BiffException{
 	Statement ms = c.createStatement();
 	ResultSet rs;
-	Workbook data = Workbook.getWorkbook(new File("data.xls"));
-	WritableWorkbook data2 = Workbook.createWorkbook(new File("data.xls"),data);
+	Workbook data = Workbook.getWorkbook(new File(filename));
+	WritableWorkbook data2 = Workbook.createWorkbook(new File(filename),data);
 	WritableSheet mst = data2.getSheet(0);
 	String nom;
 	Calendar cal = Calendar.getInstance();
