@@ -506,9 +506,9 @@ while(rs2.next()){
 			nbvendredi = sheet.getCell(6,i).getContents();
 			nbsamedi = sheet.getCell(7,i).getContents();
 			nbdimanche = sheet.getCell(8,i).getContents();
-			nbferies = sheet.getCell(9,i).getContents();
+
 			
-			rs = mystatement.executeUpdate("INSERT INTO OPTIONS(NUMERO,NBTOTAL,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES) VALUES("+Integer.toString(id)+","+nbtotal+","+nblundi+","+nbmardi+","+nbmercredi+","+nbjeudi+","+nbvendredi+","+nbsamedi+","+nbdimanche+","+nbferies+")");
+			rs = mystatement.executeUpdate("INSERT INTO OPTIONS(NUMERO,NBTOTAL,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE) VALUES("+Integer.toString(id)+","+nbtotal+","+nblundi+","+nbmardi+","+nbmercredi+","+nbjeudi+","+nbvendredi+","+nbsamedi+","+nbdimanche+")");
 			}
 			}
 		}
@@ -705,7 +705,7 @@ while(rs2.next()){
 		 return res;
 	 
 	 }
-	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 	 while(rs4.next()){
 			
 		inoptions = true; 
@@ -796,7 +796,7 @@ while(rs2.next()){
 		}
 		
 		if(inoptions){
-			rs4 = ms4.executeQuery("SELECT REPOS,NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES FROM OPTIONS as O INNER JOIN(MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) ON O.NUMERO = M.NUMERO WHERE O.NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+			rs4 = ms4.executeQuery("SELECT REPOS,NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE FROM OPTIONS as O INNER JOIN(MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) ON O.NUMERO = M.NUMERO WHERE O.NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 			while(rs4.next()){
 				repos = rs4.getInt("REPOS");
 			bftest = res.gtg;
@@ -811,7 +811,7 @@ while(rs2.next()){
 			}
 			if(dateferiee(curdat,c)){
 				bftest = res.gtg;
-				res.gtg = res.gtg && (rs.getInt("NBFERIES") < rs4.getInt("NBFERIES")) && (nbdays > repos);
+				res.gtg = res.gtg && (nbdays > repos);
 				if(bftest && !res.gtg){
 					res.error = "medecin dans les options, plus de feries qu'attribué dans les options";
 				}
