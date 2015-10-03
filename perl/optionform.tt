@@ -1,0 +1,48 @@
+
+[% WRAPPER page.tt title = c.config.name ; END %]
+	<div class="tortugadiv">
+	<p>sur cette page vous pouvez spécifier les exigences de nimporte quel médecin, attention cependant cela rendra la tâche plus difficile <br>
+	à l'algorithme d'équilibrage des gardes. Vous pouvez par exemple spécifier que telle personne n'aura que douze gardes qui seront toutes des samedi<br>		pour cela choisir simplement le nom dans le menu déroulant puis entrer les valeurs dans les cases correspondantes. <br> Chaque case correspond à une
+	valeur maximale : 12 gardes au total, 10 lundi et 3 mardi sera compris comme : pas plus de 12 gardes, maximum 10 lundi et maximum 3 mardi
+
+	<br><b>Pour supprimer une ligne, cliquer dessus puis sur le bouton "supprimer"</b><br></p>
+	<ul>
+		{{#each data}}
+		<li class="infoption {{seloption}}">nom : {{nom}} lundi : {{nblundi}} <br>mardi : {{nbmardi}} mercredi: {{nbmercredi}}<br>
+			jeudi: {{nbjeudi}} vendredi: {{nbvendredi}}<br>
+			samedi: {{nbsamedi}} dimanche: {{nbdimanche}}
+			total: {{nbtotal}}</li>
+		{{/each}}
+	</ul>
+
+	<form>
+		<select name="lenom">
+			{{#each med_data}}
+				<option value={{nom}} >{{nom}}</option>
+			{{/each}}
+		</select>
+		<label for="lundi">lundi</label>
+		<input type="number" id="lundi" name="nblundi" value=0 />
+		<label for="mardi">mardi</label>
+		<input type="number" name="nbmardi" id="mardi" value=0 />
+		<label for="mercredi">mercredi</label>
+		<input type="number" name="nbmercredi" id="mercredi" value=0 />
+		<label for="jeudi">jeudi</label>
+		<input type="number" name="nbjeudi" id="jeudi" value=0 />
+		<label for="vendredi">vendredi</label>
+		<input type="number" name="nbvendredi" id="vendredi" value=0 />
+		<label for="samedi">samedi</label>
+		<input type="number" name="nbsamedi" id="samedi" value=0 />
+		<label for="dimanche">dimanche</label>
+		<input type="number" name="nbdimanche" id="dimanche" value=0 />
+		<label for="total">total</label>
+		<input type="number" name="nbtotal" id="total" value=0 />
+		<input type="submit" value="ajouter"/>
+		<input type="button" class="remove" value="supprimer"/>
+	</form>
+	</div>
+	<div class="buttondiv">
+	<a class="buttonlink" href="http://t0rtug4.tk/infoform">précédent</a>
+	<a class="buttonlink" href="http://t0rtug4.tk/holidaysform">  suivant </a>
+	</div>
+

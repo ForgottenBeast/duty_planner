@@ -1,0 +1,29 @@
+[% WRAPPER page.tt title = c.config.name ; END %]
+<div class="tortugadiv" style="background-color: white">
+	<p> Tout d'abord veuillez entrer le nom des services pour lesquels vous desirez generer le tableau de garde.<br>
+	<b>Pour supprimer une ligne, cliquer dessus puis sur le bouton "supprimer"</b><br>
+	la deuxième case recevra le nombre de jours de repos pour chacun de ces services (nombre minimum de jours entre chaque garde)<br>
+	enfin si vous generez un planning pour plusieurs services devant fournir au moins deux medecins par garde, cochez la case afin de <br>
+	signifier qu'un service peux fournir des medecins d'interieur. Sinon ne pas y toucher</p>
+	  <ul>
+	  [%   FOREACH key IN services.keys -%]
+	      <li id=[%key%] onclick="select(this)">service : [%key%] jours de repos: [%services.$key.nb_jours%]
+              interieur : [%services.$key.interieur%]</li>
+	  [%   END -%]
+	</ul>
+		<form>
+                    <label for="ns">nom du service </label>
+                    <input type="text" name="nom_service" id="ns"/>
+                    <label for="nbjdr">nombre de jours de repos</label>
+                    <input type="number" id="nbjdr" name="nb_jours_repos" />
+                    <label for="int">service d'interieur?</label>
+                    <input type="checkbox" id="int" name="interieur" />
+                    <input type="submit" value="ajouter"/>
+                    <button onclick="remove_items('serviceform')">supprimer</button>
+                </form>
+	</div>
+	<div class="buttondiv">
+	<a class="buttonlink" href="http://[%domain%]/index">revenir à l'accueil</a>
+	<a class="buttonlink" href="http://[%domain%]/medform"> suivant</a>
+	</div>
+

@@ -1,0 +1,16 @@
+<SOFTPKG NAME="duty_planner" VERSION="0.01">
+    <ABSTRACT>Catalyst based application</ABSTRACT>
+    <AUTHOR>root</AUTHOR>
+    <IMPLEMENTATION>
+        <REQUIRE NAME="Catalyst::Action::RenderView" />
+        <REQUIRE NAME="Catalyst::Plugin::ConfigLoader" />
+        <REQUIRE NAME="Catalyst::Plugin::Static::Simple" />
+        <REQUIRE NAME="Catalyst::Runtime" VERSION="5.90101" />
+        <REQUIRE NAME="Config::General" />
+        <REQUIRE NAME="Moose::" />
+        <REQUIRE NAME="namespace::autoclean" />
+        <ARCHITECTURE NAME="x86_64-linux-gnu-thread-multi-5.20" />
+        <CODEBASE HREF="" />
+    </IMPLEMENTATION>
+</SOFTPKG>
+

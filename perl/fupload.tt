@@ -1,0 +1,27 @@
+
+[% WRAPPER page.tt title = c.config.name ; END %]
+	<div class="tortugadiv">
+	<p>Si vous lisez cette page c'est que vous avez probablement déja utilisé ce site, dans ce cas merci pour la première fois <br>et merci
+	encore pour être revenu. Lors du téléchargement vous aviez reçu un fichier data. mettez le à jour
+	en changeant les valeurs dans les différentes cases afin qu'elles se conforment à vos besoins,<br>
+	Selectionner le en cliquant sur "browse" puis cliquer sur upload
+	et enfin sur "recupérer les fichiers"<br>
+	<b>ATTENTION! si vous n'obtenez pas vos fichiers immédiatement, attendre quelques secondes et raffraichir la page blanche vers laquelle vous serez redirigés</b></p>
+	<div style="background-color: white;">{{> upload_semanticUI }} </div>
+	</div>
+	<div class="buttondiv">
+	<a class="buttonlink" href="http://t0rtug4.tk/data/{{getid}}">telecharger les fichiers</a>
+	<a class="buttonlink" href="http://t0rtug4.tk/">revenir à l'accueil</a>
+	</div>	<div class="paypaldiv">
+	
+	<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+	<input type="hidden" name="cmd" value="_s-xclick">
+	<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+	">
+	<input type="image" src="https://www.paypalobjects.com/fr_FR/FR/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - la solution de paiement en ligne la plus simple et la plus sécurisée !">
+	<img alt="" border="0" src="https://www.paypalobjects.com/fr_FR/i/scr/pixel.gif" width="1" height="1">
+	</form>
+
+	</div>
+
+
