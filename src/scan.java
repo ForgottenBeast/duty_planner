@@ -396,10 +396,20 @@ int k = 1;
 	/* remplissage de la table de services*/
 	for (int i = 1; i < sheet.getRows();i++){
 		if(sheet.getCell(1,i).getCellFormat() != null && sheet.getCell(1,i).getContents().length() != 0){
-			rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR,REPOS) VALUES('"+sheet.getCell(0,i).getContents()+"',TRUE,"+sheet.getCell(2,i).getContents()+")");
+            try {
+                rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR,REPOS) VALUES('" + sheet.getCell(0, i).getContents() + "',TRUE," + sheet.getCell(2, i).getContents() + ")");
+            }
+            catch(SQLException ex){
+                System.out.println("caught "+ex.getMessage());
+            }
 		}
 		else{
-			rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR,REPOS) VALUES('"+sheet.getCell(0,i).getContents()+"',FALSE,"+sheet.getCell(2,i).getContents()+")");
+            try {
+                rs = mystatement.executeUpdate("INSERT INTO SERVICES(NOM, INTERIEUR,REPOS) VALUES('" + sheet.getCell(0, i).getContents() + "',FALSE," + sheet.getCell(2, i).getContents() + ")");
+            }
+            catch(SQLException ex){
+                System.out.println("caught "+ex.getMessage());
+            }
 		}
 	}
 	
@@ -413,10 +423,20 @@ int k = 1;
 			dc1 = (DateCell) sheet.getCell(2,i);
 			cal.setTime(dc1.getDate());
 			d1 = new java.sql.Date(cal.getTimeInMillis());
-			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE,DERNIEREGARDE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(Integer.toString(nservice))+",'"+d1+"')");
+            try {
+                rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE,DERNIEREGARDE) VALUES('".concat(sheet.getCell(0, i).getContents()).concat("',").concat(Integer.toString(nservice)) + ",'" + d1 + "')");
+            }
+            catch(SQLException ex){
+                System.out.println("caught "+ex.getMessage());
+            }
 		}
 		else{
-			rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE) VALUES('".concat(sheet.getCell(0,i).getContents()).concat("',").concat(Integer.toString(nservice))+")");
+            try {
+                rs = mystatement.executeUpdate("INSERT INTO MEDECINS(NOM,SERVICE) VALUES('".concat(sheet.getCell(0, i).getContents()).concat("',").concat(Integer.toString(nservice)) + ")");
+            }
+            catch(SQLException ex){
+                System.out.println("caught "+ex.getMessage());
+            }
 		}
 		}
 			}
