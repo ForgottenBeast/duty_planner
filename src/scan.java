@@ -384,13 +384,14 @@ int k = 1;
  public static void filltables(Connection c, Workbook data,boolean hasint) throws SQLException, ParseException {
 	 Statement mystatement = c.createStatement();
 	 Statement ms2 = c.createStatement();
+     Statement ms3 = c.createStatement();
 	 Calendar cal = Calendar.getInstance();
 	 java.sql.Date d1,d2;
 	 int rs;
 	 DateCell dc1,dc2;
 	 Sheet sheet;
 	 boolean mbool;
-	 ResultSet rs2;
+	 ResultSet rs2,rs3;
 	 sheet = data.getSheet(4);
 	/* remplissage de la table de services*/
 	for (int i = 1; i < sheet.getRows();i++){
@@ -434,9 +435,18 @@ while(rs2.next()){
 	cal.setTime(dc2.getDate());
 	d2 = new java.sql.Date(cal.getTimeInMillis());
 	d2 = nextday(d2); //inclus le dernier jour des vacances
-	
-	
-		rs = mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES('"+d1+"','"+d2+"',".concat(Integer.toString(nmedecin)).concat(")"));
+    try {
+        rs = mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES('" + d1 + "','" + d2 + "',".concat(Integer.toString(nmedecin)).concat(")"));
+    }
+    catch(SQLException myex){
+        rs3 = ms3.executeQuery("SELECT NOM FROM MEDECINS WHERE NUMERO ="+Integer.toString(nmedecin));
+        String nom ="pas trouvé";
+        while(rs3.next()){
+            nom = rs3.getString("NOM");
+        }
+        System.out.println ("got exception with "+d1+" fin "+d2+" medecin= "+nom);
+
+    }
 }
 }
 	
