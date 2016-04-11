@@ -4,13 +4,15 @@ import java.sql.*;
 import java.text.ParseException;
 
 public class gtg {
-    String error;
+    String error_message;
+    int error;
     boolean gtg;
-
+    int nbdays;
+    int daysbf;
   public gtg(int curg,int prevint,int prevurg,Connection c,java.sql.Date curdat,
              ResultSet rs, String dowtoinc,
 			 boolean interieur,boolean equilibrage) throws SQLException, ParseException {
-     this.error = "none";
+     this.error_message = "none";
      this.gtg = true;
 	 Statement ms4 = c.createStatement();
 	 Statement ms2 = c.createStatement();
@@ -73,7 +75,8 @@ public class gtg {
 
 		 if((curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))) || ((curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0) || (curdat.compareTo(rs2.getDate("DATEFIN"))==0))){
 			 this.gtg = false;
-			 this.error = "Toutes les personnes pouvant prendre des gardes conformément au nombre de nours de repos sont en vacances";
+             this.error = 0;
+			 this.error_message = "Toutes les personnes pouvant prendre des gardes conformément au nombre de nours de repos sont en vacances";
 
 			 break;
 		 }
@@ -91,11 +94,20 @@ public class gtg {
          if(daysbf < 0){
                  daysbf = daysbf*(-1);
          }
-         bftest = this.gtg;
          this.gtg = this.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
-         if(bftest && !this.gtg){
+         if(!this.gtg){
                 System.out.println("error 1 gtg");
-                 this.error = "Diminuez le nombre de jours de repos du service";
+                this.error = 1;
+                 this.error_message = "Diminuez le nombre de jours de repos du service ou changez \n" +
+                         "les jours fériés : jours avant prochain ferie ( le" +
+                         rs3.getDate("JOUR")+" = "+daysbf+"\n" +
+                         "nbdays = "+nbdays+" pour repos = "+repos;
+                if(nbdays < repos) {
+                    this.nbdays = nbdays;
+                }
+                if(daysbf > repos) {
+                    this.daysbf = daysbf;
+                }
          }
      }
 
@@ -107,8 +119,11 @@ public class gtg {
 		repos = rs3.getInt("REPOS");
 		 this.gtg = this.gtg && ((nbdays > repos)||(nbdays < 0));
 		 if(bftest && !this.gtg){
+             this.error = 2;
              System.out.println("error 2 gtg");
-			 this.error = "Diminuez le nombre de jours de repos du service";
+			 this.error_message = "Diminuez le nombre de jours de repos du service"+
+             " il a "+nbdays+" contre au minimum "+repos;
+             this.nbdays = nbdays;
 		 }
 	 }
     System.out.println("done rs3");
@@ -160,12 +175,14 @@ public class gtg {
 			bftest  = this.gtg;
 			this.gtg = this.gtg && (rs.getInt("SERVICE")!=curg);
 			if(bftest && !this.gtg){
-				 this.error = "meme service que les urgences ce jour";
+                this.error = 0;
+				 this.error_message = "meme service que les urgences ce jour";
 			 }
 			 bftest = this.gtg;
 			 this.gtg = this.gtg && (rs.getInt("SERVICE") != prevurg) && (rs.getInt("SERVICE")!= prevint);
 			 if(bftest && !this.gtg){
-				 this.error = "meme service que ceux de garde la veille";
+                 this.error = 0;
+				 this.error_message = "meme service que ceux de garde la veille";
 			 }
 
 		}
@@ -177,18 +194,21 @@ public class gtg {
 			bftest = this.gtg;
 			this.gtg = this.gtg && (rs.getInt("NBGARDES") < rs4.getInt("NBTOTAL")) && (nbdays > repos);
 			if(bftest && !this.gtg){
-				this.error = "medecin dans les options, plus de gardes que nbtotal";
+                this.error = 0;
+				this.error_message = "medecin dans les options, plus de gardes que nbtotal";
 			}
 			bftest = this.gtg;
 			this.gtg = this.gtg && (rs.getInt(dowtoinc) < rs4.getInt(dowtoinc)) && (nbdays > repos);
                 if (bftest && !this.gtg){
-				this.error = "medecin dans les options, plus de "+dowtoinc+" que attribué dans les options";
+                    this.error = 0;
+				this.error_message = "medecin dans les options, plus de "+dowtoinc+" que attribué dans les options";
 			}
 			if(scan.dateferiee(curdat,c)){
 				bftest = this.gtg;
 				this.gtg = this.gtg && (nbdays > repos);
 				if(bftest && !this.gtg){
-					this.error = "medecin dans les options, plus de feries qu'attribué dans les options";
+                    this.error = 0;
+					this.error_message = "medecin dans les options, plus de feries qu'attribué dans les options";
 				}
 			}
 			}

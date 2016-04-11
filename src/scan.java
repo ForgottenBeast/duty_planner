@@ -778,37 +778,13 @@ public static void writegardes(datepack monpack,Connection c, WritableWorkbook o
 		int target_s = 0;
 		String target_nom = "";
 		int target_repos = 0;
-        if(monpack.error.equalsIgnoreCase("Diminuez le nombre de jours de repos du service")) {
-            try {
-                datepack tmp = new datepack(c, data, hasint);
-                while (tmp.upto.before(tmp.goal)) {
-                    System.out.println("trying again with target_repos = " + Integer.toString(target_repos) + " pour le service" +
-                            " de " + target_nom);
-                    Statement s = c.createStatement();
-                    ResultSet mrs = s.executeQuery("SELECT NUMERO,REPOS,NOM FROM SERVICES ORDER BY REPOS DESC LIMIT 1");
-
-                    while (mrs.next()) {
-                        target_nom = mrs.getString("NOM");
-                        target_s = mrs.getInt("NUMERO");
-                        target_repos = mrs.getInt("REPOS");
-                        if (target_repos > 0) {
-                            target_repos--;
-                        } else {
-                            break;
-                        }
-                    }
-                    if (target_repos <= 0) {
-                        break;
-                    }
-                    s.executeUpdate("UPDATE SERVICES SET REPOS = " + Integer.toString(target_repos) + " WHERE NUMERO = " +
-                            Integer.toString(target_s));
-                }
-            } catch (ParseException ex) {
-                System.out.println("error parsing workbook");
-            }
+        if(monpack.nbdays != 0) {
+            l2.setString(l2.getString()+" nombre max de jours de repos au moment de l'erreur: "+monpack.nbdays+"\n"+
+                "nombre max de jours de repos avant le prochain jour férié: "+monpack.daysbf+"\n"+
+                "vous pouvez tenter de générer un nouveau tableau de gardes avec un nombre de jours de repos inférieur à  " +
+                            monpack.nbdays);
+            System.out.println("printing error:\n"+l2.getString());
         }
-		Label l5 = new Label(0,i+3,"le tableau peut être généré à partir de "+Integer.toString(target_repos)+" jours" +
-				"de repos pour le service de "+target_nom);
 		ms.addCell(l1);
 		ms.addCell(l2);
 	}

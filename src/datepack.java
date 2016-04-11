@@ -20,6 +20,8 @@ public class datepack {
 	Date goal;
 	dunit garde;
 	String error;
+	int nbdays;
+	int daysbf;
 
 	public datepack(Connection c, Workbook data, boolean hasint) throws ParseException,SQLException{
 		this.upto = null;
@@ -43,7 +45,7 @@ public class datepack {
 		"\n current upto = "+this.upto+" current goal = "+this.goal);
 
 		while (!this.upto.after(this.goal)) {
-			System.out.println("generating for "+this.upto);
+			System.out.println("generating for " + this.upto);
 			String dowtoinc = scan.getdow(this.upto);
 			if (hasint) {
 				this.garde.medundefined = true;
@@ -69,17 +71,21 @@ public class datepack {
 				System.out.println("breaking cause medundefined 2");
 				break;
 			}
+			this.nbdays = 0;
+			this.daysbf = 0;
 			scan.dorecord(this, c, false, hasint);
 			prevurg = this.garde.curg;
 			prevint = curg;
 			this.upto = scan.nextday(this.upto);
 		}
 		System.out.println("done generating\n");
-		if (hasint) {
-			scan.equilibrer(c, true);
-			scan.equilibrer(c, false);
-		} else {
-			scan.equilibrer(c, false);
+		if(this.upto.after(this.goal)) {
+			if (hasint) {
+				scan.equilibrer(c, true);
+				scan.equilibrer(c, false);
+			} else {
+				scan.equilibrer(c, false);
+			}
 		}
 	}
 
@@ -117,28 +123,31 @@ public class datepack {
 				}
 			}
 		}
+
+		if(this.garde.medundefined) {
+
 			if (!interieur) {
 				System.out.println("selecttoubib branche !interieur");
 				if (hasint) {
 					rs = ms.executeQuery("SELECT NUMERO,NOM, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> " + curg + " AND MEDECINS.SERVICE <> " + prevurg + " AND MEDECINS.SERVICE <> " + prevint + " AND MEDECINS.SERVICE <> " + nextint + " ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
-				}
-				else {
+				} else {
 					rs = ms.executeQuery("SELECT NUMERO,NOM, DERNIEREGARDE, NBGARDES, " + dowtoinc + ",NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> " + curg + " AND MEDECINS.SERVICE <> " + prevurg + " AND MEDECINS.SERVICE <> " + prevint + " ORDER BY NBGARDES ASC, ".concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 				}
-			}
-			else {
+			} else {
 
 				rs = ms.executeQuery("SELECT MED.NUMERO as NUMERO,MED.NOM as NOM, MED.DERNIEREGARDE, MED.NBGARDES as NBGARDES, MED." + dowtoinc + ", MED.NBJEUDI, MED.NBVENDREDI, MED.NBSAMEDI, MED.NBDIMANCHE, MED.NBFERIES, MED.SERVICE FROM (MEDECINS AS MED INNER JOIN SERVICES AS S ON MED.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND MED.SERVICE <> " + prevurg + " AND MED.SERVICE <> " + prevint + " AND MED.SERVICE <> " + nextint + " ORDER BY NBGARDES ASC, MED." + dowtoinc + " ASC, MED.DERNIEREGARDE ASC");
 			}
+			int maxnbdays = 0;
+			int maxbfdays = 0;
 			while (rs.next()) {
-				System.out.println("now examining "+rs.getString("NOM"));
+				System.out.println("now examining " + rs.getString("NOM"));
 				if ((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint) || (interieur && (rs.getInt("SERVICE") == curg)) || ((rs.getInt("SERVICE") == nextint)) && hasint) {
 					System.out.println("continuing because of hasint");
 					continue;
 				}
-				gtg isgood = new gtg(curg, prevint, prevurg, c, curdat,rs, dowtoinc, interieur, false);
+				gtg isgood = new gtg(curg, prevint, prevurg, c, curdat, rs, dowtoinc, interieur, false);
 				if (isgood.gtg) {
-					System.out.println(rs.getString("NOM")+" has been selected for "+curdat);
+					System.out.println(rs.getString("NOM") + " has been selected for " + curdat);
 					this.garde.ferie = scan.dateferiee(curdat, c);
 					if (ferie) {
 						int nbferie = 0;
@@ -159,9 +168,24 @@ public class datepack {
 					break;
 				}
 				else {
-					this.error = isgood.error;
+					this.error = isgood.error_message;
+					if(isgood.error == 1 || isgood.error == 2) {
+						System.out.println("maxnbdays and bfdas to be set, error is "+isgood.error+" currently " +
+								maxnbdays+" \n"+maxbfdays);
+						if (maxnbdays < isgood.nbdays) {
+							maxnbdays = isgood.nbdays;
+						}
+						if (maxbfdays < isgood.daysbf) {
+							maxbfdays = isgood.daysbf;
+						}
+						System.out.println("now "+maxnbdays+"\n"+maxbfdays);
+					}
+					System.out.println(rs.getString("NOM")+ " n'a pas été séléctionné pour cause de "+isgood.error_message);
 				}
 			}
+			this.nbdays = maxnbdays;
+			this.daysbf = maxbfdays;
+		}
 
 }
 
@@ -173,6 +197,7 @@ public class datepack {
 	 Statement ms2 = c.createStatement();
 	 ResultSet rs,rs2;
 	 if(!interieur){
+		 System.out.println("selferie !interieur branch");
 		 java.sql.Date madate = new java.sql.Date(curdat.getTime());
 		 if(hasint){
 			 rs = ms.executeQuery("SELECT M.NUMERO as NUMERO, M.DERNIEREGARDE as DERNIEREGARDE, M.NBGARDES as NBGARDES,M.".concat(dowtoinc).concat(" as "+dowtoinc+",SERVICE FROM MEDECINS AS M JOIN JOURS_FERIES AS JF ON NUMERO = JF.NUMERO WHERE JF.JOUR = '"+madate+"' and JF.INTERIEUR = FALSE"));
@@ -220,7 +245,6 @@ public class datepack {
          this.garde.curg = rs.getInt("SERVICE");
 	 }
  }
-	 this.garde.medundefined = true;
  }
 
 }
