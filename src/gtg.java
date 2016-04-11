@@ -1,9 +1,6 @@
 import org.joda.time.Days;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.ParseException;
 
 public class gtg {
@@ -23,22 +20,27 @@ public class gtg {
 	 ResultSet rs2;
 	 ResultSet rs3,rs5;
 	 boolean bftest = true;
-	 boolean gtg =  true;
 	 java.sql.Date prevdat = curdat;
 	 boolean inoptions = false;
 	 int joursuivants;
 	 int repos;
+      this.gtg = true;
 	 if(equilibrage == true){
 		 if(!interieur){
-			 rs5 = ms5.executeQuery("SELECT G.JOUR,S.REPOS FROM GARDES as G INNER JOIN(MEDECINS AS M INNER JOIN " +
-                     "SERVICES AS S ON M.SERVICE = S.NUMERO) ON G.URGENCES = M.NUMERO WHERE G.URGENCES = "
+             System.out.println("requesting equilibrage gtg query 1");
+			 rs5 = ms5.executeQuery("SELECT JOUR,REPOS FROM GARDES as G INNER JOIN MEDECINS AS M ON G.URGENCES = M.NUMERO " +
+                     "INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO WHERE G.URGENCES = "
                      +Integer.toString(rs.getInt("NUMERO"))+" ORDER BY JOUR ASC");
 		 }
 		 else{
-			 rs5 = ms5.executeQuery("SELECT G.JOUR,S.REPOS FROM GARDES AS G INNER JOIN(MEDECINS AS M INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) ON G.INTERIEUR = M.NUMERO WHERE G.INTERIEUR = "+Integer.toString(rs.getInt("NUMERO"))+" ORDER BY JOUR ASC");
+             System.out.println("requesting equilibrage gtg query 2");
+			 rs5 = ms5.executeQuery("SELECT JOUR,REPOS FROM GARDES AS G INNER JOIN MEDECINS AS M ON " +
+                     "G.INTERIEUR = M.NUMERO INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO  WHERE G.INTERIEUR = "
+                     +Integer.toString(rs.getInt("NUMERO"))+" ORDER BY JOUR ASC");
 		 }
 		 while(rs5.next()){
 			 repos = rs5.getInt("REPOS");
+             System.out.println("Examining med "+rs.getString("NOM")+" repos = "+Integer.toString(repos));
 			 if(prevdat != curdat){
 				 joursuivants = Days.daysBetween(new org.joda.time.DateTime(curdat), new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays();
 
@@ -46,6 +48,7 @@ public class gtg {
 					 joursuivants *= -1;
 				 }
 				 if(joursuivants >= repos){
+                     System.out.println("setting gtg to true, 1st");
 					 this.gtg = true;
 				 }
 				 else{
@@ -58,7 +61,6 @@ public class gtg {
 			 }
 
 		 }
-		 this.gtg = false;
 
 	 }
 	 rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
@@ -95,7 +97,7 @@ public class gtg {
                 System.out.println("error 1 gtg");
                  this.error = "Diminuez le nombre de jours de repos du service";
          }
- }
+     }
 
 	 if(equilibrage == false){
 	bftest = this.gtg;
@@ -109,22 +111,27 @@ public class gtg {
 			 this.error = "Diminuez le nombre de jours de repos du service";
 		 }
 	 }
-
+    System.out.println("done rs3");
 	 }
 	 else{
 		 if(!interieur){
-			 rs5 = ms5.executeQuery("SELECT G.JOUR, S.REPOS FROM GARDES AS G INNER JOIN (MEDECINS AS M INNER JOIN " +
-                     "SERVICES AS S ON M.SERVICE = S.NUMERO) ON G.URGENCES = M.NUMERO WHERE G.URGENCES = "+
+             System.out.println("équilibrage first query gtg");
+			 rs5 = ms5.executeQuery("SELECT JOUR, REPOS FROM ((GARDES AS G INNER JOIN MEDECINS AS M ON G.URGENCES = " +
+                     "M.NUMERO) INNER JOIN SERVICES AS S ON M.SERVICE = S.NUMERO) WHERE G.URGENCES = "+
                      Integer.toString(rs.getInt("NUMERO")));
 		 }
 		 else{
+             System.out.println("équilibrage second query gtg");
 			 rs5 = ms5.executeQuery("SELECT G.JOUR,S.REPOS FROM GARDES AS G INNER JOIN(MEDECINS AS M INNER JOIN " +
                      "SERVICES AS S ON M.SERVICE = S.NUMERO) ON G.URGENCES = M.NUMERO WHERE G.INTERIEUR = "+
                      Integer.toString(rs.getInt("NUMERO")));
 
 		 }
 		 while(rs5.next()){
-			 repos = rs5.getInt("S.REPOS");
+
+             System.out.println("equilibrage pour jour "+rs5.getDate("JOUR"));
+             repos = rs5.getInt("REPOS");
+
 			 if(prevdat != curdat){
 				 if(Days.daysBetween(new org.joda.time.DateTime(curdat),
                          new org.joda.time.DateTime(rs5.getDate("JOUR"))).getDays() >= repos){
@@ -140,9 +147,14 @@ public class gtg {
 			 }
 
 		 }
+         System.out.println("done rs5 loop gtg");
 		 if(prevdat == curdat){
 			 this.gtg = false;
+             System.out.println("gtg is false");
 		 }
+         else {
+            System.out.println("gtg true sur equilibrage\n");
+         }
 	 }
 		if(interieur){
 			bftest  = this.gtg;
@@ -169,7 +181,7 @@ public class gtg {
 			}
 			bftest = this.gtg;
 			this.gtg = this.gtg && (rs.getInt(dowtoinc) < rs4.getInt(dowtoinc)) && (nbdays > repos);
-			if(bftest && !this.gtg){
+                if (bftest && !this.gtg){
 				this.error = "medecin dans les options, plus de "+dowtoinc+" que attribué dans les options";
 			}
 			if(scan.dateferiee(curdat,c)){
