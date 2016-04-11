@@ -120,9 +120,10 @@ public class datepack {
 			if (!interieur) {
 				System.out.println("selecttoubib branche !interieur");
 				if (hasint) {
-					rs = ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> " + curg + " AND MEDECINS.SERVICE <> " + prevurg + " AND MEDECINS.SERVICE <> " + prevint + " AND MEDECINS.SERVICE <> " + nextint + " ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
-				} else {
-					rs = ms.executeQuery("SELECT NUMERO, DERNIEREGARDE, NBGARDES, " + dowtoinc + ",NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> " + curg + " AND MEDECINS.SERVICE <> " + prevurg + " AND MEDECINS.SERVICE <> " + prevint + " ORDER BY NBGARDES ASC, ".concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+					rs = ms.executeQuery("SELECT NUMERO,NOM, DERNIEREGARDE, NBGARDES, ".concat(dowtoinc).concat(", NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> " + curg + " AND MEDECINS.SERVICE <> " + prevurg + " AND MEDECINS.SERVICE <> " + prevint + " AND MEDECINS.SERVICE <> " + nextint + " ORDER BY NBGARDES ASC, ").concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
+				}
+				else {
+					rs = ms.executeQuery("SELECT NUMERO,NOM, DERNIEREGARDE, NBGARDES, " + dowtoinc + ",NBJEUDI, NBVENDREDI, NBSAMEDI, NBDIMANCHE, NBFERIES, SERVICE FROM MEDECINS join SERVICES ON MEDECINS.SERVICE = SERVICES.NUMERO WHERE MEDECINS.SERVICE <> " + curg + " AND MEDECINS.SERVICE <> " + prevurg + " AND MEDECINS.SERVICE <> " + prevint + " ORDER BY NBGARDES ASC, ".concat(dowtoinc).concat(" ASC,DERNIEREGARDE ASC"));
 				}
 			}
 			else {
@@ -130,12 +131,14 @@ public class datepack {
 				rs = ms.executeQuery("SELECT MED.NUMERO as NUMERO,MED.NOM as NOM, MED.DERNIEREGARDE, MED.NBGARDES as NBGARDES, MED." + dowtoinc + ", MED.NBJEUDI, MED.NBVENDREDI, MED.NBSAMEDI, MED.NBDIMANCHE, MED.NBFERIES, MED.SERVICE FROM (MEDECINS AS MED INNER JOIN SERVICES AS S ON MED.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND MED.SERVICE <> " + prevurg + " AND MED.SERVICE <> " + prevint + " AND MED.SERVICE <> " + nextint + " ORDER BY NBGARDES ASC, MED." + dowtoinc + " ASC, MED.DERNIEREGARDE ASC");
 			}
 			while (rs.next()) {
-
+				System.out.println("now examining "+rs.getString("NOM"));
 				if ((rs.getInt("SERVICE") == prevurg) || (rs.getInt("SERVICE") == prevint) || (interieur && (rs.getInt("SERVICE") == curg)) || ((rs.getInt("SERVICE") == nextint)) && hasint) {
+					System.out.println("continuing because of hasint");
 					continue;
 				}
 				gtg isgood = new gtg(curg, prevint, prevurg, c, curdat,rs, dowtoinc, interieur, false);
 				if (isgood.gtg) {
+					System.out.println(rs.getString("NOM")+" has been selected for "+curdat);
 					this.garde.ferie = scan.dateferiee(curdat, c);
 					if (ferie) {
 						int nbferie = 0;
@@ -153,7 +156,9 @@ public class datepack {
 					this.garde.newdowcount = rs.getInt(dowtoinc) + 1;
 					this.garde.medundefined = false;
 					this.upto = curdat;
-				} else {
+					break;
+				}
+				else {
 					this.error = isgood.error;
 				}
 			}
@@ -180,7 +185,7 @@ public class datepack {
 		rs2 = ms2.executeQuery("SELECT NBFERIES FROM MEDECINS WHERE NUMERO = "+rs.getInt("NUMERO"));
 		while(rs2.next()){
 			nbferie = rs2.getInt("NBFERIES");
-				 }
+             }
 			 this.garde.nmed = rs.getInt("NUMERO");
 			 this.garde.nbferies = nbferie;
 			 this.garde.curgarde = rs.getInt("NBGARDES")+1;
