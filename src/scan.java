@@ -72,12 +72,11 @@ public class scan {
 		 boolean hasint = setup(c,data);
 		
 		 
-		 filltables(c,data,hasint);
-		
+		 filltables(c, data, hasint);
+
 		 datepack monpack = genplanning(c,data,hasint);
-		
-		 
-		 writeoutput(monpack,c,workbook,hasint,data,args);
+
+		 writeoutput(monpack, c, workbook, hasint, data, args);
 		
 	}
 	
@@ -617,7 +616,7 @@ while(rs2.next()){
  
  public static boolean dateferiee(java.sql.Date madate, Connection c) throws SQLException{
 	 Statement ms = c.createStatement();
-	 ResultSet rs = ms.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE JOUR='"+madate+"'");
+	 ResultSet rs = ms.executeQuery("SELECT JOUR FROM JOURS_FERIES WHERE JOUR='" + madate + "'");
 	 while(rs.next()){
 		 return true;
 	 }
@@ -745,7 +744,7 @@ while(rs2.next()){
 
 		 if((curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))) || ((curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0) || (curdat.compareTo(rs2.getDate("DATEFIN"))==0))){
 			 res.gtg = false;
-			 res.error = "pendant les vacances";
+			 res.error = "Toutes les personnes pouvant prendre des gardes conformément au nombre de nours de repos sont en vacances";
 			
 			 break;
 		 }
@@ -766,7 +765,7 @@ while(rs2.next()){
          bftest = res.gtg;
          res.gtg = res.gtg && (daysbf > repos) && ((nbdays > repos)||(nbdays < 0));
          if(bftest && !res.gtg){
-                 res.error = "pas assez de temps de repos";
+                 res.error = "Diminuez le nombre de jours de repos du service";
          }
  }
 
@@ -778,7 +777,7 @@ while(rs2.next()){
 		repos = rs3.getInt("REPOS");
 		 res.gtg = res.gtg && ((nbdays > repos)||(nbdays < 0));
 		 if(bftest && !res.gtg){
-			 res.error = "pas assez de temps de repos";
+			 res.error = "Diminuez le nombre de jours de repos du service";
 		 }
 	}
 	
@@ -1011,7 +1010,12 @@ public static void dorecord(datepack monpack,Connection c,boolean interieur,bool
 	 }
 	 else{
 		 if(!monpack.garde.ferie){
-			 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
+             try {
+                 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES) VALUES('" + sqldate + "',".concat(Integer.toString(monpack.garde.nmed)).concat(")"));
+             }
+             catch(SQLException ex){
+                 System.out.println("constraint violation, insertion garde  le "+sqldate);
+             }
 		 }
 		 else{
 			 rs = ms.executeUpdate("INSERT INTO GARDES(JOUR,URGENCES,MANUALLY_SET) VALUES('"+sqldate+"',".concat(Integer.toString(monpack.garde.nmed)).concat(",TRUE)"));
@@ -1022,10 +1026,10 @@ public static void dorecord(datepack monpack,Connection c,boolean interieur,bool
 /**function to write to the output excel file
  * @throws BiffException */
 public static void writeoutput(datepack monpack,Connection c, WritableWorkbook output,boolean hasint,Workbook data,String[] arg) throws SQLException, RowsExceededException, WriteException, IOException, BiffException{
-	writegardes(monpack,c,output,hasint);
+	writegardes(monpack,c,output,hasint,data);
 	writestats(c,output,hasint);
-	writegps(c,output,hasint);
-	writecalendar(c,output,hasint);
+	writegps(c, output, hasint);
+	writecalendar(c, output, hasint);
 	if(arg[0].equals("--xls")){
 		updatedata(c,arg[1]);
 	}
@@ -1071,7 +1075,7 @@ public static void writegps(Connection c, WritableWorkbook output,boolean hasint
 }
 
 /**write the shift planning to output excel file*/
-public static void writegardes(datepack monpack,Connection c, WritableWorkbook output,boolean hasint) throws SQLException, RowsExceededException, WriteException, IOException{
+public static void writegardes(datepack monpack,Connection c, WritableWorkbook output,boolean hasint,Workbook data) throws SQLException, RowsExceededException, WriteException, IOException{
 	WritableSheet ms = output.createSheet("planning", 0);
 	Statement mst = c.createStatement();
 	ResultSet rs;
@@ -1105,6 +1109,40 @@ public static void writegardes(datepack monpack,Connection c, WritableWorkbook o
 	if(monpack.upto.before(monpack.goal)){
 		l1 = new Label(0,i+1,"le tableau de garde n'a pas put être généré jusqu'au bout, voir erreur ci dessous");
 		l2 = new Label(0,i+2,monpack.error);
+		int target_s = 0;
+		String target_nom = "";
+		int target_repos = 0;
+        if(monpack.error.equalsIgnoreCase("Diminuez le nombre de jours de repos du service")) {
+            try {
+                datepack tmp = genplanning(c, data, hasint);
+                while (tmp.upto.before(tmp.goal)) {
+                    System.out.println("trying again with target_repos = " + Integer.toString(target_repos) + " pour le service" +
+                            " de " + target_nom);
+                    Statement s = c.createStatement();
+                    ResultSet mrs = s.executeQuery("SELECT NUMERO,REPOS,NOM FROM SERVICES ORDER BY REPOS DESC LIMIT 1");
+
+                    while (mrs.next()) {
+                        target_nom = mrs.getString("NOM");
+                        target_s = mrs.getInt("NUMERO");
+                        target_repos = mrs.getInt("REPOS");
+                        if (target_repos > 0) {
+                            target_repos--;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (target_repos <= 0) {
+                        break;
+                    }
+                    s.executeUpdate("UPDATE SERVICES SET REPOS = " + Integer.toString(target_repos) + " WHERE NUMERO = " +
+                            Integer.toString(target_s));
+                }
+            } catch (ParseException ex) {
+                System.out.println("error parsing workbook");
+            }
+        }
+		Label l5 = new Label(0,i+3,"le tableau peut être généré à partir de "+Integer.toString(target_repos)+" jours" +
+				"de repos pour le service de "+target_nom);
 		ms.addCell(l1);
 		ms.addCell(l2);
 	}
