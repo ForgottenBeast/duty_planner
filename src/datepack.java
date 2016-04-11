@@ -135,6 +135,8 @@ public class datepack {
 				}
 			} else {
 
+				System.out.println("selecttoubib branche interieur");
+
 				rs = ms.executeQuery("SELECT MED.NUMERO as NUMERO,MED.NOM as NOM, MED.DERNIEREGARDE, MED.NBGARDES as NBGARDES, MED." + dowtoinc + ", MED.NBJEUDI, MED.NBVENDREDI, MED.NBSAMEDI, MED.NBDIMANCHE, MED.NBFERIES, MED.SERVICE FROM (MEDECINS AS MED INNER JOIN SERVICES AS S ON MED.SERVICE = S.NUMERO) WHERE S.INTERIEUR = TRUE AND MED.SERVICE <> " + prevurg + " AND MED.SERVICE <> " + prevint + " AND MED.SERVICE <> " + nextint + " ORDER BY NBGARDES ASC, MED." + dowtoinc + " ASC, MED.DERNIEREGARDE ASC");
 			}
 			int maxnbdays = 0;
