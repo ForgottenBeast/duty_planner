@@ -625,7 +625,10 @@ public class scan {
             String target_nom = "";
             boolean target_repos = false;
             if(monpack.nbdays != 0) {
-                l2.setString(l2.getString() + " nombre max de jours de repos au moment de l\'erreur: " + monpack.nbdays + "\n" + "nombre max de jours de repos avant le prochain jour férié: " + monpack.daysbf + "\n" + "vous pouvez tenter de générer un nouveau tableau de gardes avec un nombre de jours de repos inférieur à  " + monpack.nbdays);
+                l2.setString(l2.getString() + " nombre max de jours de repos au moment de l\'erreur: "
+                        + monpack.nbdays + "\n" + "nombre max de jours de repos avant le prochain jour férié: " +
+                        monpack.daysbf + "\n" + "vous pouvez tenter de générer un nouveau tableau de gardes avec " +
+                        "maximum "+(monpack.nbdays -1)+" jours de repos");
                 System.out.println("printing error:\n" + l2.getString());
             }
 
