@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="duty_planner">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/release/duty_planner.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

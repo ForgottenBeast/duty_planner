@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="libs">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/jxl.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/opencsv-3.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/joda-time-2.7.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/hsqldb-2.3.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
