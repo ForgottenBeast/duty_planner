@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="dutyplanner:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/dutyplanner_jar</output-path>
+    <root id="archive" name="duty_planner.jar">
+      <element id="module-output" name="duty_planner" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/release/duty_planner.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jxl.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/opencsv-3.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/joda-time-2.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/hsqldb-2.3.2.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
