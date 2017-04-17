@@ -64,7 +64,7 @@ public class gtg {
 		ResultSet rs2 = ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
 
 		while(rs2.next()) {
-			if(curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN")) || curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0 || curdat.compareTo(rs2.getDate("DATEFIN")) == 0) {
+			if((curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))) || curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0 || curdat.compareTo(rs2.getDate("DATEFIN")) == 0) {
 				this.gtg = false;
 				this.error = 0;
 				this.error_message = "Toutes les personnes pouvant prendre des gardes conformément au nombre de nours de repos sont en vacances";
