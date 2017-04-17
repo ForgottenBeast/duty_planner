@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.text.ParseException;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
+import org.joda.time.Interval;
 
 public class gtg {
 	String error_message = "none";
@@ -57,13 +58,10 @@ public class gtg {
 		}
 
 		ResultSet rs4;
-		for(rs4 = ms4.executeQuery("SELECT NUMERO, NBTOTAL, NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE FROM OPTIONS WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO")))); rs4.next(); inoptions = true) {
-			;
-		}
-
-		ResultSet rs2 = ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = ".concat(Integer.toString(rs.getInt("NUMERO"))));
+		ResultSet rs2 = ms2.executeQuery("SELECT DATEDEBUT,DATEFIN FROM IMPOSSIBILITES WHERE NUMERO = "+Integer.toString(rs.getInt("NUMERO")));
 
 		while(rs2.next()) {
+			System.out.println("\nje compare les indispos:"+rs2.getDate("DATEDEBUT")+rs2.getDate("DATEFIN")+" et "+curdat);
 			if((curdat.after(rs2.getDate("DATEDEBUT")) && curdat.before(rs2.getDate("DATEFIN"))) || curdat.compareTo(rs2.getDate("DATEDEBUT")) == 0 || curdat.compareTo(rs2.getDate("DATEFIN")) == 0) {
 				this.gtg = false;
 				this.error = 0;

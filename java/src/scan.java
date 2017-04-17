@@ -332,16 +332,18 @@ public class scan {
             }
         }
 
-        sheet = data.getSheet(2);
+        sheet = data.getSheet("vacances");
 
         String nblundi;
+
         for(nom = 1; nom < sheet.getRows(); ++nom) {
-            rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = \'".concat(sheet.getCell(2, nom).getContents()).concat("\'"));
+            System.out.println("remplissage indispos:"+"SELECT NUMERO FROM MEDECINS WHERE NOM = \'".concat(sheet.getCell(0, nom).getContents()).concat("\'"));
+            rs2 = ms2.executeQuery("SELECT NUMERO FROM MEDECINS WHERE NOM = \'".concat(sheet.getCell(0, nom).getContents()).concat("\'"));
 
             while(rs2.next()) {
                 int monset = rs2.getInt("NUMERO");
-                dc1 = (DateCell)sheet.getCell(0, nom);
-                DateCell dc2 = (DateCell)sheet.getCell(1, nom);
+                dc1 = (DateCell)sheet.getCell(1, nom);
+                DateCell dc2 = (DateCell)sheet.getCell(2, nom);
                 cal.setTime(dc1.getDate());
                 d1 = new java.sql.Date(cal.getTimeInMillis());
                 cal.setTime(dc2.getDate());
@@ -351,13 +353,13 @@ public class scan {
                 try {
                     mystatement.executeUpdate("INSERT INTO IMPOSSIBILITES(DATEDEBUT,DATEFIN,NUMERO) VALUES(\'" + d1 + "\',\'" + d2 + "\',".concat(Integer.toString(monset)).concat(")"));
                 } catch (SQLException var34) {
+                    System.out.println("exception impossibilité");
                     ResultSet rs3 = ms3.executeQuery("SELECT NOM FROM MEDECINS WHERE NUMERO =" + Integer.toString(monset));
 
                     for(nblundi = "pas trouvé"; rs3.next(); nblundi = rs3.getString("NOM")) {
-                        ;
+                        System.out.println("got exception with " + d1 + " fin " + d2 + " medecin= " + nblundi);
                     }
 
-                    System.out.println("got exception with " + d1 + " fin " + d2 + " medecin= " + nblundi);
                 }
             }
         }
