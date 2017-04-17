@@ -408,7 +408,7 @@ public class scan {
             }
         }
 
-        sheet = data.getSheet(5);
+        sheet = data.getSheet("options");
         id = -1;
 
         for(int i = 1; i < sheet.getRows(); ++i) {
@@ -428,7 +428,8 @@ public class scan {
                     String nbvendredi = sheet.getCell(6, i).getContents();
                     String nbsamedi = sheet.getCell(7, i).getContents();
                     String nbdimanche = sheet.getCell(8, i).getContents();
-                    mystatement.executeUpdate("INSERT INTO OPTIONS(NUMERO,NBTOTAL,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE) VALUES(" + Integer.toString(id) + "," + nbtotal + "," + nblundi + "," + nbmardi + "," + nbmercredi + "," + nbjeudi + "," + nbvendredi + "," + nbsamedi + "," + nbdimanche + ")");
+                    String nbferies = sheet.getCell(9,i).getContents();
+                    mystatement.executeUpdate("INSERT INTO OPTIONS(NUMERO,NBTOTAL,NBLUNDI,NBMARDI,NBMERCREDI,NBJEUDI,NBVENDREDI,NBSAMEDI,NBDIMANCHE,NBFERIES) VALUES(" + Integer.toString(id) + "," + nbtotal + "," + nblundi + "," + nbmardi + "," + nbmercredi + "," + nbjeudi + "," + nbvendredi + "," + nbsamedi + "," + nbdimanche + ","+nbferies+")");
                 }
             }
         }
