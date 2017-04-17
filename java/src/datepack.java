@@ -82,7 +82,9 @@ public class datepack {
 
     }
 
-    private void selecttoubib(boolean hasint, int curg, int prevurg, int prevint, boolean medundefined, int newdowcount, int curgarde, Connection c, boolean interieur, String dowtoinc) throws SQLException, ParseException {
+    private void selecttoubib(boolean hasint, int curg, int prevurg, int prevint, boolean medundefined, int newdowcount,
+                              int curgarde, Connection c, boolean interieur, String dowtoinc) throws SQLException,
+                                ParseException {
         Date curdat = this.upto;
         Statement ms2 = c.createStatement();
         Statement ms = c.createStatement();
